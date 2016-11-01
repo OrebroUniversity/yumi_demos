@@ -21,7 +21,7 @@
 namespace demo_grasping
 {
   //-----------------------------------------------------------
-  //#define HQP_GRIPPER_JOINT 1
+//#define HQP_GRIPPER_JOINT 1
 
 //#define PILE_GRASPING 1
 
@@ -99,7 +99,8 @@ namespace demo_grasping
     bool write_img_;
     bool write_tf_;
     bool write_cluster_;
-
+    unsigned int n_jnts;
+    std::vector<std::string> link_frame_names;
 
     ros::NodeHandle nh_;
     ros::NodeHandle n_;
@@ -128,6 +129,7 @@ namespace demo_grasping
     
     ros::Publisher task_feedback_pub_;
 
+    ///Clients to other nodes
     ros::ServiceClient set_tasks_clt_;
     ros::ServiceClient get_grasp_interval_clt_;
     ros::ServiceClient activate_hqp_control_clt_;
@@ -135,19 +137,17 @@ namespace demo_grasping
     ros::ServiceClient visualize_task_geometries_clt_;
     ros::ServiceClient remove_tasks_clt_;
     ros::ServiceClient set_gazebo_physics_clt_;
-    //    ros::ServiceClient velvet_pos_clt_;
+    //    ros::ServiceClient gripper_to_pos_clt_; ///not sure if possible?
+    
+    ros::ServiceClient close_gripper_clt_;
+    ros::ServiceClient open_gripper_clt_;
+
     ros::ServiceClient load_tasks_clt_;
     ros::ServiceClient reset_hqp_control_clt_;
-    //    ros::ServiceClient velvet_grasp_clt_;
-    //    ros::ServiceClient set_stiffness_clt_;
-    //    ros::ServiceClient next_truck_task_clt_;
     ros::ServiceClient reset_map_clt_;
+    
+    ///Servers
     ros::ServiceServer start_demo_srv_;
-    //    ros::ServiceServer exp_outcome_srv_;
-    ros::ServiceServer gimme_beer_srv_;
-    ros::ServiceServer approach_beer_srv_;
-    ros::ServiceServer extract_beer_srv_;
-    ros::ServiceServer lets_dance_srv_;
     ros::ServiceServer look_what_i_found_srv_;
 
     ros::ServiceClient switch_controller_clt_;
@@ -156,10 +156,6 @@ namespace demo_grasping
     std::vector<double> transfer_config_;
     //** Manipulator joint configuration prior to reach-to-grasp */
     std::vector<double> sensing_config_;
-    std::vector<double> sensing_config2_;
-    std::vector<double> sensing_config3_;
-    std::vector<double> gimme_beer_config_;
-    std::vector<double> look_beer_config_;
     //** message holding the active tasks at each state. After each state change these tasks are removed and replaced by the ones corresponding to the next state. */
     hqp_controllers_msgs::SetTasks tasks_;
     //** map holding the ids of those tasks whose completion indicates a state change*/
@@ -190,11 +186,6 @@ namespace demo_grasping
     bool setObjectPlace(PlaceInterval const& place);
     bool loadPersistentTasks();
     bool getGraspInterval();
-    //    bool setCartesianStiffness(double sx, double sy, double sz, double sa, double sb, double sc);
-
-    //double maximumNorm(std::vector<double>const& e);
-
-    //void generateTaskObjectTemplates();
 
     /////////////////
     //  CALLBACKS  //
@@ -205,12 +196,8 @@ namespace demo_grasping
     void imgCallback(const sensor_msgs::ImagePtr& msg);
     void tfCallback(const tf2_msgs::TFMessagePtr& msg);
     void clusterCallback(const sensor_msgs::PointCloud2Ptr& msg);
+
     bool startDemo(std_srvs::Empty::Request  &req,std_srvs::Empty::Response &res );
-    bool expOutcome(hqp_controllers_msgs::ActivateHQPControl::Request & req, hqp_controllers_msgs::ActivateHQPControl::Response &res);
-    bool gimmeBeer(std_srvs::Empty::Request  &req,std_srvs::Empty::Response &res );
-    bool approachBeer(std_srvs::Empty::Request  &req,std_srvs::Empty::Response &res );
-    bool extractBeer(std_srvs::Empty::Request  &req,std_srvs::Empty::Response &res );
-    bool letsDance(std_srvs::Empty::Request  &req,std_srvs::Empty::Response &res );
     bool lookWhatIFound(std_srvs::Empty::Request  &req,std_srvs::Empty::Response &res );
   };
 

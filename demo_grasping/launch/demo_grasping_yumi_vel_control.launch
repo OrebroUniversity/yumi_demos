@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!-- LAUNCH INTERFACE -->
+
+  <arg name="controllers" default="joint_state_controller hqp_vel_controller"/>
+  <arg name="hardware_interface" default="VelocityJointInterface"/>
+
+  <rosparam file="$(find demo_grasping)/hqp_tasks/task_definitions.yaml" command="load" ns="/yumi"/>
+  
+  <!-- LAUNCH IMPLEMENTATION -->
+
+  <!--Load the URDF and launch Gazebo-->
+  <include file="$(find yumi_launch)/launch/yumi_vel_control.launch">
+      <arg name="controllers" value="$(arg controllers)"/>
+      <arg name="hardware_interface" value="$(arg hardware_interface)"/>
+  </include>
+
+  <!-- launch the demo_grasping node -->
+  <node name="demo_grasping" pkg="demo_grasping" type="demo_grasping" respawn="false" output="screen" >
+     <param name="with_gazebo" type="bool" value="false"/>
+     <param name="bag_path" type="string" value="$(find demo_grasping)/data"/>
+
+     <!-- prototype grasp frame and pose -->
+     <param name="grasp_req_frame" value="world"/>
+     <param name="grasp_req_radius" value="0.03"/>
+     <param name="grasp_req_height" value="0.1"/>
+     <param name="grasp_req_px" value="0.45"/>
+     <param name="grasp_req_py" value="0.0"/>
+     <param name="grasp_req_pz" value="0.12"/>
+     <param name="grasp_req_ox" value="0"/>
+     <param name="grasp_req_oy" value="0"/>
+     <param name="grasp_req_oz" value="0"/>
+     <param name="grasp_req_ow" value="1"/>
+     
+     <remap from="/get_grasp_interval" to="/gplanner/plan_grasp"/>
+     <remap from="/task_status_array" to="/yumi/hqp_vel_controller/task_status_array"/>
+     <remap from="/set_tasks" to="/yumi/hqp_vel_controller/set_tasks"/>
+     <remap from="/remove_tasks" to="/yumi/hqp_vel_controller/remove_tasks"/>
+     <remap from="/load_tasks" to="/yumi/hqp_vel_controller/load_tasks"/>
+     <remap from="/activate_hqp_control" to="/yumi/hqp_vel_controller/activate_hqp_control"/>
+     <remap from="/reset_hqp_control" to="/yumi/hqp_vel_controller/reset_hqp_control"/>
+     <remap from="/visualize_task_geometries" to="/yumi/hqp_vel_controller/visualize_task_geometries"/>
+     <remap from="/set_physics_properties" to="/gazebo/set_physics_properties"/>
+     <remap from="/joint_states" to="/yumi/joint_states"/>
+     <remap from="/switch_controller" to="/yumi/controller_manager/switch_controller"/>
+     <remap from="/reset_map" to="/gplanner/clear_map"/>
+     
+     <remap from="/close_gripper" to="/yumi/yumi_gripper/do_grasp"/>
+     <remap from="/open_gripper" to="/yumi/yumi_gripper/release_grasp"/>
+
+  </node>
+
+
+</launch>

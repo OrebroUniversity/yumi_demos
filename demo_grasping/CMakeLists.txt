@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   gazebo_msgs
   roscpp
   rosbag
+  yumi_hw
 )
 
 ## System dependencies are found with CMake's conventions
@@ -55,6 +56,7 @@ catkin_package(
      hqp_controllers_msgs
      controller_manager_msgs
      gazebo_msgs
+     yumi_hw
      INCLUDE_DIRS include ${EIGEN_INCLUDE_DIRS}
 )
 ## Generate messages in the 'msg' folder
@@ -84,22 +86,6 @@ catkin_package(
 #   hqp_controllers_msgs
 # )
 
-###################################
-## catkin specific configuration ##
-###################################
-## The catkin_package macro generates cmake config files for your package
-## Declare things to be passed to dependent projects
-## INCLUDE_DIRS: uncomment this if you package contains header files
-## LIBRARIES: libraries you create in this project that dependent projects also need
-## CATKIN_DEPENDS: catkin_packages dependent projects also need
-## DEPENDS: system dependencies of this project that dependent projects also need
-catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES demo_grasping
-#  CATKIN_DEPENDS hqp_controllers_msgs roscpp
-#  DEPENDS system_lib
-)
-
 ###########
 ## Build ##
 ###########
@@ -117,9 +103,8 @@ include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
 
 ## Declare a cpp executable
 add_executable(demo_grasping src/demo_grasping.cpp
-                                src/lets_dance.cpp
                                 src/look_what_i_found.cpp
-                                src/gimme_beer.cpp)
+              )
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes

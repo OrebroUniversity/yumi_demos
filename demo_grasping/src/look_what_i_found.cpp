@@ -18,29 +18,6 @@ namespace demo_grasping
 	return false;
       }
 
-    // if(!with_gazebo_)
-    //   {
-	// if(!setCartesianStiffness(1000, 1000, 1000, 100, 100, 100))
-	//   {
-	//     safeShutdown();
-	//     return false;
-	//   }
-    //  }
-
-    // if(!with_gazebo_)
-    //   {
-	// //VELVET POSE
-	// velvet_interface_node::VelvetToPos poscall;
-
-	// poscall.request.angle = 0.3;
-	// if(!velvet_pos_clt_.call(poscall))
-	//   {
-	//     ROS_ERROR("could not call velvet to pos");
-	//     ROS_BREAK();
-	//   }
-
-    // }
-
     {//MANIPULATOR GIMME BEER CONFIGURATION
       ROS_INFO("Trying to put the manipulator in gimme beer configuration.");
 
@@ -55,7 +32,7 @@ namespace demo_grasping
 	  return false;
 	}
 
-      if(!setJointConfiguration(gimme_beer_config_))
+      if(!setJointConfiguration(sensing_config_))
 	{
 	  ROS_ERROR("Could not set manipulator sensing configuration!");
 	  safeShutdown();
@@ -76,9 +53,12 @@ namespace demo_grasping
       ROS_INFO("Manipulator gimme beer configuration tasks executed successfully.");
     }
 
+    ///TODO here add tasks for dual grasp approach
+
     if(!with_gazebo_)
       {
 
+	///TODO here call grasp service
 	// deactivateHQPControl();
 	// //VELVET GRASP_
 	// velvet_interface_node::SmartGrasp graspcall;
@@ -102,114 +82,69 @@ namespace demo_grasping
 
       }
 
-    for (unsigned int i=0; i<3; i++)
+    ///TODO add left extract tasks
+    ///TODO add right extract tasks
+    
+    ///back to sensing configuration
+    {//MANIPULATOR GIMME BEER CONFIGURATION
+      ROS_INFO("Trying to put the manipulator in gimme beer configuration.");
+
+      boost::mutex::scoped_lock lock(manipulator_tasks_m_);
+      task_status_changed_ = false;
+      task_success_ = false;
+      deactivateHQPControl();
+      if(!resetState())
+	{
+	  ROS_ERROR("Could not reset the state!");
+	  safeShutdown();
+	  return false;
+	}
+
+      if(!setJointConfiguration(sensing_config_))
+	{
+	  ROS_ERROR("Could not set manipulator sensing configuration!");
+	  safeShutdown();
+	  return false;
+	}
+      task_error_tol_ = 1e-2;
+      activateHQPControl();
+
+      while(!task_status_changed_)
+	cond_.wait(lock);
+
+      if(!task_success_)
+	{
+	  ROS_ERROR("Could not complete the manipulator gimme beer configuration tasks!");
+	  safeShutdown();
+	  return false;
+	}
+      ROS_INFO("Manipulator gimme beer configuration tasks executed successfully.");
+    }
+    
+    if(!with_gazebo_)
       {
-	{//MANIPULATOR TRANSFER CONFIGURATION
-	  ROS_INFO("Trying to put the manipulator in gimme beer configuration.");
 
-	  boost::mutex::scoped_lock lock(manipulator_tasks_m_);
-	  task_status_changed_ = false;
-	  task_success_ = false;
-	  deactivateHQPControl();
-	  if(!resetState())
-	    {
-	      ROS_ERROR("Could not reset the state!");
-	      safeShutdown();
-	      return false;
-	    }
+	///TODO here call grasp service to open grippers
+	// deactivateHQPControl();
+	// //VELVET GRASP_
+	// velvet_interface_node::SmartGrasp graspcall;
+	// graspcall.request.current_threshold_contact = 20;
+	// graspcall.request.current_threshold_final = 35;
+	// graspcall.request.max_belt_travel_mm = 90;
+	// graspcall.request.phalange_delta_rad = 0.02;
+	// graspcall.request.gripper_closed_thresh = 1.5;
+	// graspcall.request.check_phalanges = true;
 
-	  if(!setJointConfiguration(transfer_config_))
-	    {
-	      ROS_ERROR("Could not set manipulator sensing configuration!");
-	      safeShutdown();
-	      return false;
-	    }
-	  task_error_tol_ = 1e-2;
-	  activateHQPControl();
-
-	  while(!task_status_changed_)
-	    cond_.wait(lock);
-
-	  if(!task_success_)
-	    {
-	      ROS_ERROR("Could not complete the manipulator transfer configuration tasks!");
-	      safeShutdown();
-	      return false;
-	    }
-	  ROS_INFO("Manipulator transfer configuration tasks executed successfully.");
-	}
-
-
-	{//MANIPULATOR LOOK BEER CONFIGURATION
-	  ROS_INFO("Trying to put the manipulator in look beer configuration.");
-
-	  boost::mutex::scoped_lock lock(manipulator_tasks_m_);
-	  task_status_changed_ = false;
-	  task_success_ = false;
-	  deactivateHQPControl();
-	  if(!resetState())
-	    {
-	      ROS_ERROR("Could not reset the state!");
-	      safeShutdown();
-	      return false;
-	    }
-
-	  if(!setJointConfiguration(look_beer_config_))
-	    {
-	      ROS_ERROR("Could not set manipulator look beer configuration!");
-	      safeShutdown();
-	      return false;
-	    }
-	  task_error_tol_ = 1e-2;
-	  activateHQPControl();
-
-	  while(!task_status_changed_)
-	    cond_.wait(lock);
-
-	  if(!task_success_)
-	    {
-	      ROS_ERROR("Could not complete the manipulator look beer configuration tasks!");
-	      safeShutdown();
-	      return false;
-	    }
-	  ROS_INFO("Manipulator look beer configuration tasks executed successfully.");
-	}
-
-
-	{//MANIPULATOR GIMME BEER CONFIGURATION
-	  ROS_INFO("Trying to put the manipulator in gimme beer configuration.");
-
-	  boost::mutex::scoped_lock lock(manipulator_tasks_m_);
-	  task_status_changed_ = false;
-	  task_success_ = false;
-	  deactivateHQPControl();
-	  if(!resetState())
-	    {
-	      ROS_ERROR("Could not reset the state!");
-	      safeShutdown();
-	      return false;
-	    }
-
-	  if(!setJointConfiguration(gimme_beer_config_))
-	    {
-	      ROS_ERROR("Could not set manipulator sensing configuration!");
-	      safeShutdown();
-	      return false;
-	    }
-	  task_error_tol_ = 1e-2;
-	  activateHQPControl();
-
-	  while(!task_status_changed_)
-	    cond_.wait(lock);
-
-	  if(!task_success_)
-	    {
-	      ROS_ERROR("Could not complete the manipulator gimme beer configuration tasks!");
-	      safeShutdown();
-	      return false;
-	    }
-	  ROS_INFO("Manipulator gimme beer configuration tasks executed successfully.");
-	}
+	// if(!velvet_grasp_clt_.call(graspcall)) {
+	//   ROS_ERROR("could not call grasping");
+	//   ROS_BREAK();
+	// }
+	// if(!graspcall.response.success)
+	//   ROS_ERROR("Grasp failed!");
+	// else
+	//   {
+	//     ROS_INFO("Grasp aquired.");
+	//   }
 
       }
 

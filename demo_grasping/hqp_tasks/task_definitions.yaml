@@ -112,6 +112,118 @@ task_definitions:
                 - g_type: 7
                   g_data: [2.2689, 4.0, -4.0] 
 
+###### SAME FOR LEFT ARM #######
+       - t_type: 4 #joint limit avoidance
+         priority: 1
+         name: yumi_joint_1_l_avoidance
+         is_equality_task: 0
+         task_frame: world
+         ds: 0.0 #safety margin
+         di: 0.4  #influence zone
+         dynamics: 
+           d_type: 1
+           d_data: [-1.0]
+         t_links:
+            - link_frame: yumi_link_1_l
+              geometries: 
+                - g_type: 7 #joint limit
+                  g_data: [1.4835, 2.94, -2.94] #dq_max, upper joint limit, lower joint limit
+   
+       - t_type: 4
+         priority: 1
+         name: yumi_joint_2_l_avoidance
+         is_equality_task: 0
+         task_frame: world
+         ds: 0.0
+         di: 0.4
+         dynamics: 
+           d_type: 1
+           d_data: [-1.0]
+         t_links:
+            - link_frame: yumi_link_2_l
+              geometries: 
+                - g_type: 7
+                  g_data: [1.4835, 0.75, -2.5] 
+         
+       - t_type: 4
+         priority: 1
+         name: yumi_joint_7_l_avoidance
+         is_equality_task: 0
+         task_frame: world
+         ds: 0.0
+         di: 0.4
+         dynamics: 
+           d_type: 1
+           d_data: [-1.0]
+         t_links:
+            - link_frame: yumi_link_3_l
+              geometries: 
+                - g_type: 7
+                  g_data: [1.7453, 2.94, -2.94] 
+
+       - t_type: 4
+         priority: 1
+         name: yumi_joint_3_l_avoidance
+         is_equality_task: 0
+         task_frame: world
+         ds: 0.0
+         di: 0.4
+         dynamics: 
+           d_type: 1
+           d_data: [-1.0]
+         t_links:
+            - link_frame: yumi_link_4_l
+              geometries: 
+                - g_type: 7
+                  g_data: [1.3090, 1.4, -2.16] 
+
+       - t_type: 4
+         priority: 1
+         name: yumi_joint_4_l_avoidance
+         is_equality_task: 0
+         task_frame: world
+         ds: 0.0
+         di: 0.4
+         dynamics: 
+           d_type: 1
+           d_data: [-1.0]
+         t_links:
+            - link_frame: yumi_link_5_l
+              geometries: 
+                - g_type: 7
+                  g_data: [2.2689, 5.07, -5.07] 
+
+       - t_type: 4
+         priority: 1
+         name: yumi_joint_5_l_avoidance
+         is_equality_task: 0
+         task_frame: world
+         ds: 0.0
+         di: 0.4
+         dynamics: 
+           d_type: 1
+           d_data: [-1.0]
+         t_links:
+            - link_frame: yumi_link_6_l
+              geometries: 
+                - g_type: 7
+                  g_data: [2.2689, 2.41, -1.54] 
+
+       - t_type: 4
+         priority: 1
+         name: yumi_joint_6_l_avoidance
+         is_equality_task: 0
+         task_frame: world
+         ds: 0.0
+         di: 0.4
+         dynamics: 
+           d_type: 1
+           d_data: [-1.0]
+         t_links:
+            - link_frame: yumi_link_7_l
+              geometries: 
+                - g_type: 7
+                  g_data: [2.2689, 4.0, -4.0] 
 ##############  OBSTACLE AVOIDANCE ###############
        - t_type: 1 #projection
          priority: 1
