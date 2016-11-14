@@ -9,8 +9,6 @@
   <rosparam file="$(find demo_grasping)/hqp_tasks/task_definitions.yaml" command="load" ns="/yumi"/>
   
   <!-- LAUNCH IMPLEMENTATION -->
-
-  <!--Load the URDF and launch Gazebo-->
   <include file="$(find yumi_launch)/launch/yumi_vel_control.launch">
       <arg name="controllers" value="$(arg controllers)"/>
       <arg name="hardware_interface" value="$(arg hardware_interface)"/>
