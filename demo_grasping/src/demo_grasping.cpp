@@ -17,7 +17,7 @@ namespace demo_grasping
 {
 using namespace boost::assign;
 //-----------------------------------------------------------------
-DemoGrasping::DemoGrasping() : task_error_tol_(0.0), task_diff_tol_(1e-5), task_timeout_tol_(0.5), n_jnts(14)
+DemoGrasping::DemoGrasping() : task_error_tol_(0.0), task_diff_tol_(1e-5), task_timeout_tol_(1.5), n_jnts(14)
 {
 
     //handle to home
@@ -85,6 +85,7 @@ DemoGrasping::DemoGrasping() : task_error_tol_(0.0), task_diff_tol_(1e-5), task_
     grasp_plan_request.request.objectPose.orientation.y = oy;
     grasp_plan_request.request.objectPose.orientation.z = oz;
     grasp_plan_request.request.objectPose.orientation.w = ow;
+    grasp_plan_request.request.approach_frame = "world";
 
 
     switch_controller_clt_ = n_.serviceClient<controller_manager_msgs::SwitchController>("switch_controller");
@@ -276,32 +277,78 @@ bool DemoGrasping::getGraspInterval()
 {
     //get the grasp intervall
     get_grasp_interval_clt_.waitForExistence();
-    
-    if(!get_grasp_interval_clt_.call(grasp_plan_request)) {
+   
+    grasp_planner::PlanGrasp grasp_plan_request_right = grasp_plan_request;
+    grasp_planner::PlanGrasp grasp_plan_request_left = grasp_plan_request;
+    //RIGHT ARM
+    grasp_plan_request_right.request.approach_vector[0] = 0;
+    grasp_plan_request_right.request.approach_vector[1] = 1;
+    grasp_plan_request_right.request.approach_vector[2] = 0;
+    grasp_plan_request_right.request.approach_angle = 1.57;
+    //LEFT ARM
+    grasp_plan_request_left.request.approach_vector[0] = 0;
+    grasp_plan_request_left.request.approach_vector[1] = -1;
+    grasp_plan_request_left.request.approach_vector[2] = 0;
+    grasp_plan_request_left.request.approach_angle = 1.57;
+   
+#if 0 
+    ROS_INFO("Request is:");
+    std::cout<<grasp_plan_request_right.request.object_radius <<" "<<
+               grasp_plan_request_right.request.object_height <<" "<<
+               grasp_plan_request_right.request.objectPose.position.x <<" "<<
+               grasp_plan_request_right.request.objectPose.position.y <<" "<<
+               grasp_plan_request_right.request.objectPose.position.z <<" "<<
+               grasp_plan_request_right.request.objectPose.orientation.x <<" "<<
+               grasp_plan_request_right.request.objectPose.orientation.y <<" "<<
+               grasp_plan_request_right.request.objectPose.orientation.z <<" "<<
+               grasp_plan_request_right.request.objectPose.orientation.w <<" "<<
+               grasp_plan_request_right.request.approach_frame <<" "<< 
+	       grasp_plan_request_right.request.approach_vector[0] <<" "<< 
+	       grasp_plan_request_right.request.approach_vector[1] <<" "<< 
+	       grasp_plan_request_right.request.approach_vector[2] <<" "<< 
+	       grasp_plan_request_right.request.approach_angle <<"\n";
+#endif
+
+    if(!get_grasp_interval_clt_.call(grasp_plan_request_right)) {
 	ROS_ERROR("Could not call grasp client");
 	return false;
     }
 
-    if(!grasp_plan_request.response.success) {
-	ROS_ERROR("Planning was NOT successful!");
-        return false;
+    if(!grasp_plan_request_right.response.success) {
+	ROS_WARN("Planning was NOT successful! (RIGHT)");
+    }
+    
+    if(!get_grasp_interval_clt_.call(grasp_plan_request_left)) {
+	ROS_ERROR("Could not call grasp client");
+	return false;
+    }
+
+    if(!grasp_plan_request_left.response.success) {
+	ROS_WARN("Planning was NOT successful! (LEFT)");
+    }
+    
+    if(!grasp_plan_request_left.response.success && !grasp_plan_request_right.response.success) {
+	ROS_ERROR("Planning was NOT successful with either arm, ABORT!");
+	return false;
+    }
+
+    if(grasp_plan_request_right.response.volume > grasp_plan_request_left.response.volume ) {
+	// grasping with right
+	ROS_INFO("Grasping with right");
+	grasp_plan_request.response = grasp_plan_request_right.response;
+	grasp_.e_frame_ = "gripper_r_base"; //endeffector frame
+    } 
+    else
+    {
+	// grasping with left
+	ROS_INFO("Grasping with left");
+	grasp_plan_request.response = grasp_plan_request_left.response;
+	grasp_.e_frame_ = "gripper_l_base"; //endeffector frame
     }
 
     ROS_INFO("Got grasp plan, processing");
     grasp_.isDefaultGrasp = false;
-#ifdef PILE_GRASPING
-    ROS_ASSERT(grasp.response.constraints.size()==2);
-    std::vector<double> data;
-    grasp_.obj_frame_ = grasp.response.reference_frame;
-
-    ROS_ASSERT(grasp.response.constraints[0].g_type == hqp_controllers_msgs::TaskGeometry::POINT);
-    data = grasp.response.constraints[0].g_data;
-    grasp_.p_(0) = data[0]; grasp_.p_(1) = data[1]; grasp_.p_(2) = data[2];
-
-    ROS_ASSERT(grasp.response.constraints[1].g_type == hqp_controllers_msgs::TaskGeometry::LINE);
-    data = grasp.response.constraints[1].g_data;
-    grasp_.a_(0) = data[3]; grasp_.a_(1) = data[4]; grasp_.a_(2) = data[5];
-#else
+    
     ROS_ASSERT(grasp_plan_request.response.constraints.size()==6);
     std::vector<double> data;
     grasp_.obj_frame_ = grasp_plan_request.response.frame_id;
@@ -380,7 +427,6 @@ bool DemoGrasping::getGraspInterval()
     //Plane normals need to point in opposit directions to give a closed interval
     ROS_ASSERT((grasp_.n1_.transpose() * grasp_.n2_)  <= 0.0);
 
-#endif
     return true;
 }
 //-----------------------------------------------------------------
@@ -1391,7 +1437,7 @@ bool DemoGrasping::setGraspApproach()
     task.ds = 0.0;
     task.di = 0.02;
     task.dynamics.d_type = hqp_controllers_msgs::TaskDynamics::LINEAR_DYNAMICS;
-    task.dynamics.d_data.push_back(DYNAMICS_GAIN );
+    task.dynamics.d_data.push_back(1.5*DYNAMICS_GAIN );
 
     t_link.geometries.clear();
     t_geom.g_data.clear();
@@ -1423,7 +1469,7 @@ bool DemoGrasping::setGraspApproach()
     task.ds = 0.0;
     task.di = 0.05;
     task.dynamics.d_type = hqp_controllers_msgs::TaskDynamics::LINEAR_DYNAMICS;
-    task.dynamics.d_data.push_back(2*DYNAMICS_GAIN);
+    task.dynamics.d_data.push_back(3*DYNAMICS_GAIN);
 
     t_link.geometries.clear();
     t_geom.g_data.clear();
@@ -1945,6 +1991,13 @@ bool DemoGrasping::startDemo(std_srvs::Empty::Request  &req, std_srvs::Empty::Re
 
     if(!with_gazebo_)
     {
+	std_srvs::Empty empty;
+        if(!reset_map_clt_.call(empty))
+        {
+            ROS_ERROR("could not clear map");
+            ROS_BREAK();
+        }
+	
 	yumi_hw::YumiGrasp gr;
 	gr.request.gripper_id = 1;
 	
@@ -1962,6 +2015,8 @@ bool DemoGrasping::startDemo(std_srvs::Empty::Request  &req, std_srvs::Empty::Re
             ROS_ERROR("could not open gripper");
             ROS_BREAK();
         }
+	//some time for the sdf to build up a bit
+	sleep(2);
     }
 
     {//MANIPULATOR SENSING CONFIGURATION
@@ -2049,7 +2104,7 @@ bool DemoGrasping::startDemo(std_srvs::Empty::Request  &req, std_srvs::Empty::Re
     if(!with_gazebo_)
     {
 	yumi_hw::YumiGrasp gr;
-	gr.request.gripper_id = 2;
+	gr.request.gripper_id = (grasp_.e_frame_ == "gripper_l_base") ? 1 : 2;
 	
         if(!close_gripper_clt_.call(gr))
         {
