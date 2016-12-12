@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<launch> 
+
+  <node name="demo_teleop" pkg="demo_teleop" type="demo_teleop_node" respawn="false" output="screen" >
+     <param name="frame_left" type="string" value="test_frame_l"/>
+     <param name="frame_right" type="string" value="test_frame_r"/>
+     
+     <param name="translation_threshold" value="0.05"/>
+     <param name="rotation_threshold" value="0.4"/>
+  </node>
+
+  <node pkg="tf" type="static_transform_publisher" name="test_frame_l_pub"
+        args="0.30 0.1 0.25 1.57 0 1.57 /world /test_frame_l 100" />
+  
+  <node pkg="tf" type="static_transform_publisher" name="test_frame_r_pub"
+        args="0.30 -0.1 0.25 1.57 0 1.57 /world /test_frame_r 100" />
+
+</launch>
