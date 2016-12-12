@@ -27,7 +27,8 @@ class DemoTeleop {
 
 	///Clients to other nodes
 	ros::ServiceClient set_joint_task_;
-	ros::ServiceClient set_gripper_state_;
+	ros::ServiceClient close_gripper_clt_;
+	ros::ServiceClient open_gripper_clt_;
 	ros::ServiceClient clear_map_;
 	ros::ServiceClient convert_map_;
 	ros::ServiceClient publish_map_;
@@ -45,23 +46,25 @@ class DemoTeleop {
 	std::string frame_left, frame_right;
 
 	Eigen::Affine3d leftInFrame, rightInFrame;
-	double trans_thresh, rot_thresh;
-	bool new_pose_, first_left, first_right;
+	double trans_thresh, rot_thresh, grasp_thresh;
+	bool new_pose_, first_left, first_right, runOnline, leftClosed, rightClosed;
     public:
 	DemoTeleop() {
 	    nh_ = ros::NodeHandle("~");
 	    n_ = ros::NodeHandle();
 	    
-	    nh_.param<std::string>("pose_left_topic",pleft_topic,"/leap_motion/pose_left");
-	    nh_.param<std::string>("pose_rigth_topic",pright_topic,"/leap_motion/pose_right");
-	    nh_.param<std::string>("grasp_left_topic",gleft_topic,"/leap_motion/grasp_left");
-	    nh_.param<std::string>("grasp_rigth_topic",gright_topic,"/leap_motion/grasp_right");
+	    nh_.param<std::string>("pose_left_topic",pleft_topic,"/leap_hands/pose_left");
+	    nh_.param<std::string>("pose_rigth_topic",pright_topic,"/leap_hands/pose_right");
+	    nh_.param<std::string>("grasp_left_topic",gleft_topic,"/leap_hands/grasp_left");
+	    nh_.param<std::string>("grasp_rigth_topic",gright_topic,"/leap_hands/grasp_right");
 	    
 	    nh_.param<std::string>("frame_left",frame_left,"gripper_l_base");
 	    nh_.param<std::string>("frame_right",frame_right,"gripper_r_base");
 	    
 	    nh_.param("translation_threshold",trans_thresh,0.05); //m
 	    nh_.param("rotation_threshold",rot_thresh,0.25); //rad
+	    nh_.param("grasp_threshold",grasp_thresh,0.7); //0 to 1
+	    nh_.param("run_online",runOnline,false); //0 to 1
 	    
 	    marker_viz_pub_ = nh_.advertise<visualization_msgs::MarkerArray> ("tracking_state_markers",10);
 
@@ -76,6 +79,17 @@ class DemoTeleop {
 	    new_pose_ = false;
 	    first_left = false;
 	    first_right = false;
+	    //these should probably be read from joint states
+	    leftClosed = false;
+	    rightClosed = false;
+	
+	    if(runOnline) {
+		close_gripper_clt_ = n_.serviceClient<yumi_hw::YumiGrasp>("close_gripper");
+		close_gripper_clt_.waitForExistence();
+	
+		open_gripper_clt_ = n_.serviceClient<yumi_hw::YumiGrasp>("open_gripper");
+		open_gripper_clt_.waitForExistence();
+	    }
 	}
 
 	void pose_left_callback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
@@ -133,10 +147,72 @@ class DemoTeleop {
 	}
 
 	void grasp_left_callback(const std_msgs::Float32::ConstPtr& msg) {
+	   
+	    if(msg->data > grasp_thresh && !leftClosed) { 
+		yumi_hw::YumiGrasp gr;
+		gr.request.gripper_id =1;
+		if(runOnline) {
+		    if(!close_gripper_clt_.call(gr))
+		    {
+			ROS_ERROR("could not close gripper");
+			ROS_BREAK();
+		    }
+		} else {
+		    ROS_INFO("left gripper should close");
+		}
+		sleep(1);
+		leftClosed = true;
+	    }
+	    if(msg->data < grasp_thresh && leftClosed) { 
+		yumi_hw::YumiGrasp gr;
+		gr.request.gripper_id =1;
+		if(runOnline) {
+		    if(!open_gripper_clt_.call(gr))
+		    {
+			ROS_ERROR("could not close gripper");
+			ROS_BREAK();
+		    }
+		} else {
+		    ROS_INFO("left gripper should open");
+		}
+		sleep(1);
+		leftClosed = false;
+	    }
 
 	}
 
 	void grasp_right_callback(const std_msgs::Float32::ConstPtr& msg) {
+	   
+	    if(msg->data > grasp_thresh && !rightClosed) { 
+		yumi_hw::YumiGrasp gr;
+		gr.request.gripper_id =2;
+		if(runOnline) {
+		    if(!close_gripper_clt_.call(gr))
+		    {
+			ROS_ERROR("could not close gripper");
+			ROS_BREAK();
+		    }
+		} else {
+		    ROS_INFO("right gripper should close");
+		}
+		sleep(1);
+		rightClosed = true;
+	    }
+	    if(msg->data < grasp_thresh && rightClosed) { 
+		yumi_hw::YumiGrasp gr;
+		gr.request.gripper_id =2;
+		if(runOnline) {
+		    if(!open_gripper_clt_.call(gr))
+		    {
+			ROS_ERROR("could not close gripper");
+			ROS_BREAK();
+		    }
+		} else {
+		    ROS_INFO("right gripper should open");
+		}
+		sleep(1);
+		rightClosed = false;
+	    }
 
 	}
 
