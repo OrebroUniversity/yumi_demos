@@ -507,19 +507,35 @@ class DemoTeleop {
 	    }
 	    // enter teleop loop //
 	    //define tasks	
+	    std::stringstream strm;
+	    hiqp_msgs::RemoveTask rtask;
+	    
 	    hiqp_msgs::SetTask task_proj_left;
-	    task_proj_left.request.name = "teleop_init_config";
+	    task_proj_left.request.name = "teleop_left_frame";
 	    task_proj_left.request.priority = 3;
 	    task_proj_left.request.visible = 1;
 	    task_proj_left.request.active = 1;
 	    task_proj_left.request.def_params.push_back("TDefGeomProj");
 	    task_proj_left.request.def_params.push_back("frame");
 	    task_proj_left.request.def_params.push_back("frame");
-	    task_proj_left.request.def_params.push_back("teleop_right_frame = teleop_gripper_right_frame");
+	    task_proj_left.request.def_params.push_back("teleop_left_frame = teleop_gripper_left_frame");
 	    task_proj_left.request.dyn_params.push_back("TDynFirstOrder");
-	    std::stringstream strm;
 	    strm<<teleop_task_dynamics;
 	    task_proj_left.request.dyn_params.push_back(strm.str());
+	   
+	    strm.clear(); 
+	    hiqp_msgs::SetTask task_proj_right;
+	    task_proj_right.request.name = "teleop_right_frame";
+	    task_proj_right.request.priority = 3;
+	    task_proj_right.request.visible = 1;
+	    task_proj_right.request.active = 1;
+	    task_proj_right.request.def_params.push_back("TDefGeomProj");
+	    task_proj_right.request.def_params.push_back("frame");
+	    task_proj_right.request.def_params.push_back("frame");
+	    task_proj_right.request.def_params.push_back("teleop_right_frame = teleop_gripper_right_frame");
+	    task_proj_right.request.dyn_params.push_back("TDynFirstOrder");
+	    strm<<teleop_task_dynamics;
+	    task_proj_right.request.dyn_params.push_back(strm.str());
 
 	    while(true) {
 		//wait for operator to align markers
@@ -535,6 +551,12 @@ class DemoTeleop {
 		    ROS_ERROR("could not set task %s",task_proj_left.request.name.c_str());
 		    ROS_BREAK();
 		}
+		task_proj_right.request.active = 1;
+		if(!set_controller_task_.call(task_proj_right))
+		{
+		    ROS_ERROR("could not set task %s",task_proj_right.request.name.c_str());
+		    ROS_BREAK();
+		}
 
 		
 		//-------------------------------------------------------------------------//
@@ -544,11 +566,16 @@ class DemoTeleop {
 		
 		//-------------------------------------------------------------------------//
 		//disable task
-		ROS_INFO("Lost sync, disabling teleop task");
-		task_proj_left.request.active = 0;
-		if(!set_controller_task_.call(task_proj_left))
+		rtask.request.task_name = "teleop_left_frame";
+		if(!remove_controller_task_.call(rtask))
 		{
-		    ROS_ERROR("could not set task %s",task_proj_left.request.name.c_str());
+		    ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+		    ROS_BREAK();
+		}
+		rtask.request.task_name = "teleop_right_frame";
+		if(!remove_controller_task_.call(rtask))
+		{
+		    ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
 		    ROS_BREAK();
 		}
 		//-------------------------------------------------------------------------//

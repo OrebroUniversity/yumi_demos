@@ -6,12 +6,12 @@
      <param name="frame_left" type="string" value="gripper_l_base"/>
      <param name="frame_right" type="string" value="gripper_r_base"/>
      
-     <param name="translation_threshold" value="0.1"/>
-     <param name="rotation_threshold" value="0.2"/>
+     <param name="translation_threshold" value="0.15"/>
+     <param name="rotation_threshold" value="0.3"/>
      <param name="pose_freshness_threshold" value="0.5"/>
      
      <rosparam param="jnts_teleop_sensing">[-0.42, -1.48, 1.21, 0.75, -1.6, 0.7, 1.21, 0.42, -1.48, -1.21, 0.75, 1.6, 0.7, 1.21]</rosparam>
-     <rosparam param="jnts_teleop_init">[-0.72, -0.98, 1.21, 0.75, -1.6, 0.7, -1.21, 0.72, -0.98, -1.21, 0.75, 1.6, 0.7, -1.21]</rosparam>
+     <rosparam param="jnts_teleop_init">[-0.72, -0.98, 1.21, 0.75, -1.6, 0.7, -1.21, 0.72, -0.98, -1.21, 0.75, 1.6, 0.7, -1.61]</rosparam>
 
      <remap from="/set_task" to="/yumi/hiqp_joint_velocity_controller/set_task" />
      <remap from="/remove_task" to="/yumi/hiqp_joint_velocity_controller/remove_task" />
@@ -20,17 +20,17 @@
 
   
   <node pkg="leap_motion" type="leap_hands" name="leap_hands" output="screen">
-    <param name="frame_name" value="world" />
+    <param name="frame_name" value="yumi_body" />
     <param name="Tx" value="0.3" />
     <param name="Ty" value="0.0" />
-    <param name="Tz" value="0.12" />
+    <param name="Tz" value="0.02" />
     <param name="Tyaw" value="0.0" />
     <param name="Tpitch" value="0.0" />
     <param name="Troll" value="0.0" /> <!-- order is the same as in static tf publisher -->
   </node>
 
   <node pkg="tf" type="static_transform_publisher" name="leap_link"
-        args="0.30 0.0 0.12 0.0 0.0 0.0 /world /leap_optical_frame 50" />
+        args="0.30 0.0 0.02 0.0 0.0 0.0 /yumi_body /leap_optical_frame 50" />
 
   <include file="$(find grasp_planner)/launch/offline_yumi.launch">
   </include>
