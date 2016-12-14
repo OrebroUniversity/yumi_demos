@@ -1,17 +1,21 @@
 <?xml version="1.0"?>
 <launch> 
-  <param name="use_sim_time" type="bool" value="true"/>
+  <param name="use_sim_time" type="bool" value="false"/>
 
   <node name="demo_teleop" pkg="demo_teleop" type="demo_teleop_node" respawn="false" output="screen" >
      <param name="frame_left" type="string" value="gripper_l_base"/>
      <param name="frame_right" type="string" value="gripper_r_base"/>
      
-     <param name="translation_threshold" value="5.15"/>
-     <param name="rotation_threshold" value="0.3"/>
+     <param name="translation_threshold" value="0.2"/>
+     <param name="rotation_threshold" value="0.5"/>
      <param name="pose_freshness_threshold" value="0.5"/>
+     <param name="teleop_task_dynamics" value="0.8"/>
+     <param name="jnt_task_dynamics" value="0.5"/>
+     
+     <param name="run_online" value="true"/>
    
-     <rosparam param="jnts_teleop_sensing">[ -0.4, -1.88, 0.61, 0.19, -0.84, 0.15, -2.12, 0.52, -1.94, -0.65, 0.28, 1.58, 0.18, -1.52]</rosparam>
      <rosparam param="jnts_teleop_init">[-0.84, -2.13, 1.47, 0.89, 1.15, 0.42, -3.0, 0.84, -2.13, -1.47, 0.89, -1.15, 0.42, 0.0]</rosparam>
+     <rosparam param="jnts_teleop_sensing">[ -0.4, -1.88, 0.61, 0.19, -0.84, 0.15, -2.12, 0.52, -1.94, -0.65, 0.28, 1.58, 0.18, -1.52]</rosparam>
      <!--
      <rosparam param="jnts_teleop_sensing">[-0.42, -1.48, 1.21, 0.75, -1.6, 0.7, 1.21, 0.42, -1.48, -1.21, 0.75, 1.6, 0.7, 1.21]</rosparam>
      <rosparam param="jnts_teleop_init">[-0.72, -0.98, 1.21, 0.75, -1.6, 0.7, -1.21, 0.72, -0.98, -1.21, 0.75, 1.6, 0.7, -1.61]</rosparam>
@@ -20,8 +24,11 @@
      <remap from="/set_task" to="/yumi/hiqp_joint_velocity_controller/set_task" />
      <remap from="/remove_task" to="/yumi/hiqp_joint_velocity_controller/remove_task" />
      <remap from="/add_primitive" to="/yumi/hiqp_joint_velocity_controller/add_primitive" />
+     <remap from="/close_gripper" to="/yumi/yumi_gripper/do_grasp" />
+     <remap from="/open_gripper" to="/yumi/yumi_gripper/release_grasp" />
+     <remap from="/reset_map" to="/gplanner/clear_map" />
+     <remap from="/map_to_edt" to="/gplanner/map_to_edt" />
   </node>
-
   
   <node pkg="leap_motion" type="leap_hands" name="leap_hands" output="screen">
     <param name="frame_name" value="yumi_body" />
@@ -36,12 +43,12 @@
   <node pkg="tf" type="static_transform_publisher" name="leap_link"
         args="0.30 0.0 0.02 0.0 0.0 0.0 /yumi_body /leap_optical_frame 50" />
 
-  <include file="$(find grasp_planner)/launch/offline_yumi.launch">
-  </include>
+  <!--include file="$(find grasp_planner)/launch/test_yumi.launch">
+  </include-->
   
-  <include file="$(find hiqp_ros)/launch/yumi_simulation.launch">
+  <!--include file="$(find hiqp_ros)/launch/yumi_simulation.launch">
     <arg name="start_rviz" value="false" />
-  </include>
+  </include-->
   
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find demo_teleop)/launch/yumi.rviz"/>
 

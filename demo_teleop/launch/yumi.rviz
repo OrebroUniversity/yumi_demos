@@ -6,14 +6,17 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /RobotModel1
         - /RobotModel1/Links1
         - /Tasks1
-        - /TF1
+        - /TF1/Frames1
         - /TF1/Tree1
+        - /PointCloud21
         - /MarkerArray1
         - /MarkerArray2
         - /Pose1
         - /Pose2
+        - /PointCloud22
       Splitter Ratio: 0.664206982
     Tree Height: 725
   - Class: rviz/Selection
@@ -34,7 +37,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: PointCloud2
 Visualization Manager:
   Class: ""
   Displays:
@@ -109,62 +112,62 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
+          Value: false
         yumi_link_1_r:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
+          Value: false
         yumi_link_2_l:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
+          Value: false
         yumi_link_2_r:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
+          Value: false
         yumi_link_3_l:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
+          Value: false
         yumi_link_3_r:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
+          Value: false
         yumi_link_4_l:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
+          Value: false
         yumi_link_4_r:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
+          Value: false
         yumi_link_5_l:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
+          Value: false
         yumi_link_5_r:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
+          Value: false
         yumi_link_6_l:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
+          Value: false
         yumi_link_6_r:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
+          Value: false
         yumi_link_7_l:
           Alpha: 1
           Show Axes: false
@@ -194,6 +197,16 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
+        camera_depth_frame:
+          Value: false
+        camera_depth_optical_frame:
+          Value: false
+        camera_link:
+          Value: false
+        camera_rgb_frame:
+          Value: false
+        camera_rgb_optical_frame:
+          Value: false
         gripper_l_base:
           Value: true
         gripper_l_finger_l:
@@ -206,9 +219,13 @@ Visualization Manager:
           Value: false
         gripper_r_finger_r:
           Value: false
-        leap_optical_frame:
+        kinect2_ir_optical_frame:
           Value: false
-        sdf_map_frame:
+        kinect2_link:
+          Value: false
+        kinect2_rgb_optical_frame:
+          Value: false
+        leap_optical_frame:
           Value: false
         world:
           Value: false
@@ -249,9 +266,18 @@ Visualization Manager:
       Show Names: true
       Tree:
         world:
-          sdf_map_frame:
-            {}
           yumi_body:
+            camera_link:
+              camera_depth_frame:
+                camera_depth_optical_frame:
+                  {}
+              camera_rgb_frame:
+                camera_rgb_optical_frame:
+                  {}
+            kinect2_link:
+              kinect2_rgb_optical_frame:
+                kinect2_ir_optical_frame:
+                  {}
             leap_optical_frame:
               {}
             yumi_link_1_l:
@@ -283,16 +309,16 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 0.549889982
-        Min Value: -0.660517991
+        Max Value: 0.527086854
+        Min Value: -0.578770041
         Value: true
       Axis: Z
       Channel Name: intensity
       Class: rviz/PointCloud2
       Color: 255; 255; 255
-      Color Transformer: AxisColor
+      Color Transformer: RGB8
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -309,13 +335,13 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /gplanner/sdf_marker
       Name: MarkerArray
       Namespaces:
-        my_namespace: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -357,6 +383,36 @@ Visualization Manager:
       Topic: /leap_hands/pose_right
       Unreliable: false
       Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: RGB8
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 4096
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: PointCloud2
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.00999999978
+      Style: Flat Squares
+      Topic: /kinect2/qhd/points
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 200; 200; 200
@@ -381,7 +437,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1.03834367
+      Distance: 0.898148417
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -395,10 +451,10 @@ Visualization Manager:
       Focal Shape Size: 0.0500000007
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 1.5097959
+      Pitch: 1.4897964
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.17540646
+      Yaw: 3.15722132
     Saved: ~
 Window Geometry:
   Displays:
