@@ -44,10 +44,14 @@ class DemoTeleop {
 
 	ros::ServiceServer start_demo_;
 	ros::ServiceServer start_demo_right_;
+	
+	ros::ServiceServer regain_start_pose_;
+	ros::ServiceServer quit_demo_;
 
 	tf::TransformListener tl;
 
 	boost::mutex newpose_m;
+	boost::mutex bools_mutex;
 	boost::condition_variable cond_;
 
 	std::string pleft_topic, pright_topic, gleft_topic, gright_topic;
@@ -56,6 +60,7 @@ class DemoTeleop {
 	Eigen::Affine3d leftInFrame, rightInFrame;
 	double trans_thresh, rot_thresh, grasp_thresh, time_last_left_pose, time_last_right_pose, fresh_thresh, jnt_task_dynamics, teleop_task_dynamics;
 	bool new_pose_, runOnline, leftClosed, rightClosed;
+	bool regain_start, quit_demo;
 
 	double grasp_thresh_tol;
 	std::vector<double> teleop_sensing, teleop_init;
@@ -105,6 +110,8 @@ class DemoTeleop {
 
 	    start_demo_ = nh_.advertiseService("start_demo", &DemoTeleop::start_demo_callback, this);
 	    start_demo_right_ = nh_.advertiseService("start_demo_right", &DemoTeleop::start_demo_right_callback, this);
+	    regain_start_pose_ = nh_.advertiseService("regain_start", &DemoTeleop::regain_start_callback, this);
+	    quit_demo_ = nh_.advertiseService("quit_demo", &DemoTeleop::quit_demo_callback, this);
 
 	    new_pose_ = false;
 	    time_last_left_pose = 0;
@@ -113,6 +120,9 @@ class DemoTeleop {
 	    leftClosed = false;
 	    rightClosed = false;
 	    grasp_thresh_tol=0.2;
+
+	    regain_start=false;
+	    quit_demo=false;
 
 	    set_controller_task_ = n_.serviceClient<hiqp_msgs::SetTask>("set_task");
 	    set_controller_task_.waitForExistence();
@@ -263,7 +273,7 @@ class DemoTeleop {
 
 	}
 
-	void waitForSync (double trans_thresh_loc, double rot_thresh_loc, double fresh_thresh_loc, bool isSyncedAlready) {
+	bool waitForSync (double trans_thresh_loc, double rot_thresh_loc, double fresh_thresh_loc, bool isSyncedAlready) {
 
 	    ///set up visualization markers
 	    visualization_msgs::MarkerArray marker_array;
@@ -316,6 +326,12 @@ class DemoTeleop {
 		    continue; 
 		}
 		new_pose_ = false;
+
+		bools_mutex.lock();
+		bool quit = quit_demo || regain_start;
+		bools_mutex.unlock();
+
+		if(quit) return false;
 	
 		Eigen::AngleAxisd min_rot_left(leftInFrame.rotation());
 		Eigen::AngleAxisd min_rot_right(rightInFrame.rotation());
@@ -356,6 +372,7 @@ class DemoTeleop {
 
 		marker_viz_pub_.publish(marker_array);
 	    }
+	    return true;
 
 	}
 
@@ -386,7 +403,7 @@ class DemoTeleop {
 		    ROS_ERROR("could not set task %s",task.request.name.c_str());
 		    ROS_BREAK();
 		}
-		sleep(3);
+		sleep(10);
 	    }
 	    //wait to achieve
 	    //-------------------------------------------------------------------------//
@@ -569,10 +586,56 @@ class DemoTeleop {
 	    strm<<jnt_task_dynamics; //FIXME ?
 	    task_align_right.request.dyn_params.push_back(strm.str());
 
-	    while(true) {
+	    bools_mutex.lock();
+	    bool quit = quit_demo;
+	    bools_mutex.unlock();
+	    while(!quit) {
 		//wait for operator to align markers
+		bools_mutex.lock();
+		bool restart = regain_start;
+		regain_start = false;
+		bools_mutex.unlock();
+		if(restart) {
+		    ROS_INFO("Setting initial pose again");
+		    hiqp_msgs::SetTask task;
+		    task.request.name = "teleop_init_config";
+		    task.request.priority = 3;
+		    task.request.visible = 1;
+		    task.request.active = 1;
+		    task.request.def_params.push_back("TDefFullPose");
+		    for(int i=0; i<teleop_sensing.size(); ++i) {
+			std::stringstream strm;
+			strm<<teleop_init[i];
+			task.request.def_params.push_back(strm.str());
+		    }
+		    task.request.dyn_params.push_back("TDynFirstOrder");
+		    std::stringstream strm;
+		    strm<<jnt_task_dynamics;
+		    task.request.dyn_params.push_back(strm.str());
+
+		    if(!set_controller_task_.call(task))
+		    {
+			ROS_ERROR("could not set task %s",task.request.name.c_str());
+			ROS_BREAK();
+		    }
+		    sleep(3);
+		    //remove previous task
+		    hiqp_msgs::RemoveTask rtask;
+		    rtask.request.task_name = "teleop_init_config";
+		    if(!remove_controller_task_.call(rtask))
+		    {
+			ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+			ROS_BREAK();
+		    }
+		}
+
 		ROS_INFO("waiting for sync...");
-		waitForSync(trans_thresh, rot_thresh, fresh_thresh, false);
+		if(!waitForSync(trans_thresh, rot_thresh, fresh_thresh, false)) { 
+		    bools_mutex.lock();
+		    quit = quit_demo;
+		    bools_mutex.unlock();
+		    continue; 
+		}
 		//-------------------------------------------------------------------------//
 		//synced, enable task
 		ROS_INFO("Synced, enabling teleop task");
@@ -583,6 +646,7 @@ class DemoTeleop {
 		    ROS_ERROR("could not set task %s",task_proj_left.request.name.c_str());
 		    ROS_BREAK();
 		}
+		
 		task_proj_right.request.active = 1;
 		if(!set_controller_task_.call(task_proj_right))
 		{
@@ -605,7 +669,12 @@ class DemoTeleop {
 		
 		//-------------------------------------------------------------------------//
 		//monitor sync status
-		waitForSync(5*trans_thresh, 5*rot_thresh, 2*fresh_thresh, true);
+		if(!waitForSync(5*trans_thresh, 5*rot_thresh, 2*fresh_thresh, true)) { 
+		    bools_mutex.lock();
+		    quit = quit_demo;
+		    bools_mutex.unlock();
+		    continue; 
+		}
 		
 		
 		//-------------------------------------------------------------------------//
@@ -637,6 +706,24 @@ class DemoTeleop {
 		//-------------------------------------------------------------------------//
 	    }
 
+	    return true;
+	}
+
+	bool regain_start_callback(std_srvs::Empty::Request  &req,
+		std_srvs::Empty::Response &res ) {
+
+	    bools_mutex.lock();
+	    regain_start = true;
+	    bools_mutex.unlock();
+	    return true;
+	}
+
+	bool quit_demo_callback(std_srvs::Empty::Request  &req,
+		std_srvs::Empty::Response &res ) {
+
+	    bools_mutex.lock();
+	    quit_demo = true;
+	    bools_mutex.unlock();
 	    return true;
 	}
 
