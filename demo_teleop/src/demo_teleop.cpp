@@ -57,6 +57,7 @@ class DemoTeleop {
 	double trans_thresh, rot_thresh, grasp_thresh, time_last_left_pose, time_last_right_pose, fresh_thresh, jnt_task_dynamics, teleop_task_dynamics;
 	bool new_pose_, runOnline, leftClosed, rightClosed;
 
+	double grasp_thresh_tol;
 	std::vector<double> teleop_sensing, teleop_init;
 
     private:
@@ -86,7 +87,7 @@ class DemoTeleop {
 	    nh_.param("run_online",runOnline,false); //0 to 1
 	    
 	    nh_.param("jnt_task_dynamics",jnt_task_dynamics,1.0); //seconds
-	    nh_.param("teleop_task_dynamics",teleop_task_dynamics,10.0); //seconds
+	    nh_.param("teleop_task_dynamics",teleop_task_dynamics,8.0); //seconds
 
 	    nh_.getParam("jnts_teleop_sensing", teleop_sensing);
 	    ROS_ASSERT_MSG(teleop_sensing.size() == 14, 
@@ -111,7 +112,8 @@ class DemoTeleop {
 	    //these should probably be read from joint states
 	    leftClosed = false;
 	    rightClosed = false;
-		
+	    grasp_thresh_tol=0.2;
+
 	    set_controller_task_ = n_.serviceClient<hiqp_msgs::SetTask>("set_task");
 	    set_controller_task_.waitForExistence();
 	
@@ -193,7 +195,7 @@ class DemoTeleop {
 
 	void grasp_left_callback(const std_msgs::Float32::ConstPtr& msg) {
 	   
-	    if(msg->data > grasp_thresh && !leftClosed) { 
+	    if(msg->data > grasp_thresh+grasp_thresh_tol && !leftClosed) { 
 		yumi_hw::YumiGrasp gr;
 		gr.request.gripper_id =1;
 		if(runOnline) {
@@ -208,7 +210,7 @@ class DemoTeleop {
 		sleep(1);
 		leftClosed = true;
 	    }
-	    if(msg->data < grasp_thresh && leftClosed) { 
+	    if(msg->data < grasp_thresh-grasp_thresh_tol && leftClosed) { 
 		yumi_hw::YumiGrasp gr;
 		gr.request.gripper_id =1;
 		if(runOnline) {
@@ -228,7 +230,7 @@ class DemoTeleop {
 
 	void grasp_right_callback(const std_msgs::Float32::ConstPtr& msg) {
 	   
-	    if(msg->data > grasp_thresh && !rightClosed) { 
+	    if(msg->data > grasp_thresh+grasp_thresh_tol && !rightClosed) { 
 		yumi_hw::YumiGrasp gr;
 		gr.request.gripper_id =2;
 		if(runOnline) {
@@ -243,7 +245,7 @@ class DemoTeleop {
 		sleep(1);
 		rightClosed = true;
 	    }
-	    if(msg->data < grasp_thresh && rightClosed) { 
+	    if(msg->data < grasp_thresh-grasp_thresh_tol && rightClosed) { 
 		yumi_hw::YumiGrasp gr;
 		gr.request.gripper_id =2;
 		if(runOnline) {
@@ -323,7 +325,7 @@ class DemoTeleop {
 		double t_err_r = rightInFrame.translation().norm();
 		double r_err_r = min_rot_right.angle();
 		bool fresh_left = (getDoubleTime() - time_last_left_pose) < fresh_thresh_loc;
-		bool fresh_right = (getDoubleTime() - time_last_left_pose) < fresh_thresh_loc;
+		bool fresh_right = (getDoubleTime() - time_last_right_pose) < fresh_thresh_loc;
 
 		synced = t_err_l < trans_thresh_loc && r_err_l < rot_thresh_loc && t_err_r < trans_thresh_loc && r_err_r < rot_thresh_loc;
 		synced = synced && fresh_left && fresh_right; // make sure we are not running on empty
@@ -512,7 +514,7 @@ class DemoTeleop {
 	    
 	    hiqp_msgs::SetTask task_proj_left;
 	    task_proj_left.request.name = "teleop_left_frame";
-	    task_proj_left.request.priority = 3;
+	    task_proj_left.request.priority = 2;
 	    task_proj_left.request.visible = 1;
 	    task_proj_left.request.active = 1;
 	    task_proj_left.request.def_params.push_back("TDefGeomProj");
@@ -526,7 +528,7 @@ class DemoTeleop {
 	    strm.clear(); 
 	    hiqp_msgs::SetTask task_proj_right;
 	    task_proj_right.request.name = "teleop_right_frame";
-	    task_proj_right.request.priority = 3;
+	    task_proj_right.request.priority = 2;
 	    task_proj_right.request.visible = 1;
 	    task_proj_right.request.active = 1;
 	    task_proj_right.request.def_params.push_back("TDefGeomProj");
@@ -536,6 +538,36 @@ class DemoTeleop {
 	    task_proj_right.request.dyn_params.push_back("TDynFirstOrder");
 	    strm<<teleop_task_dynamics;
 	    task_proj_right.request.dyn_params.push_back(strm.str());
+
+	    strm.clear(); 
+	    hiqp_msgs::SetTask task_align_left;
+	    task_align_left.request.name = "teleop_left_align";
+	    task_align_left.request.priority = 2;
+	    task_align_left.request.visible = 1;
+	    task_align_left.request.active = 1;
+	    task_align_left.request.def_params.push_back("TDefGeomAlign");
+	    task_align_left.request.def_params.push_back("frame");
+	    task_align_left.request.def_params.push_back("frame");
+	    task_align_left.request.def_params.push_back("teleop_left_frame = teleop_gripper_left_frame");
+	    task_align_left.request.def_params.push_back("0");
+	    task_align_left.request.dyn_params.push_back("TDynFirstOrder");
+	    strm<<jnt_task_dynamics; //FIXME ?
+	    task_align_left.request.dyn_params.push_back(strm.str());
+
+	    strm.clear(); 
+	    hiqp_msgs::SetTask task_align_right;
+	    task_align_right.request.name = "teleop_right_align";
+	    task_align_right.request.priority = 2;
+	    task_align_right.request.visible = 1;
+	    task_align_right.request.active = 1;
+	    task_align_right.request.def_params.push_back("TDefGeomAlign");
+	    task_align_right.request.def_params.push_back("frame");
+	    task_align_right.request.def_params.push_back("frame");
+	    task_align_right.request.def_params.push_back("teleop_right_frame = teleop_gripper_right_frame");
+	    task_align_right.request.def_params.push_back("0");
+	    task_align_right.request.dyn_params.push_back("TDynFirstOrder");
+	    strm<<jnt_task_dynamics; //FIXME ?
+	    task_align_right.request.dyn_params.push_back(strm.str());
 
 	    while(true) {
 		//wait for operator to align markers
@@ -557,6 +589,18 @@ class DemoTeleop {
 		    ROS_ERROR("could not set task %s",task_proj_right.request.name.c_str());
 		    ROS_BREAK();
 		}
+		task_align_left.request.active = 1;
+		if(!set_controller_task_.call(task_align_left))
+		{
+		    ROS_ERROR("could not set task %s",task_align_left.request.name.c_str());
+		    ROS_BREAK();
+		}
+		task_align_right.request.active = 1;
+		if(!set_controller_task_.call(task_align_right))
+		{
+		    ROS_ERROR("could not set task %s",task_align_right.request.name.c_str());
+		    ROS_BREAK();
+		}
 
 		
 		//-------------------------------------------------------------------------//
@@ -573,6 +617,18 @@ class DemoTeleop {
 		    ROS_BREAK();
 		}
 		rtask.request.task_name = "teleop_right_frame";
+		if(!remove_controller_task_.call(rtask))
+		{
+		    ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+		    ROS_BREAK();
+		}
+		rtask.request.task_name = "teleop_left_align";
+		if(!remove_controller_task_.call(rtask))
+		{
+		    ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+		    ROS_BREAK();
+		}
+		rtask.request.task_name = "teleop_right_align";
 		if(!remove_controller_task_.call(rtask))
 		{
 		    ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
