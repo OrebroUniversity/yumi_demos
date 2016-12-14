@@ -6,8 +6,8 @@
      <param name="frame_left" type="string" value="gripper_l_base"/>
      <param name="frame_right" type="string" value="gripper_r_base"/>
      
-     <param name="translation_threshold" value="0.2"/>
-     <param name="rotation_threshold" value="0.5"/>
+     <param name="translation_threshold" value="0.25"/>
+     <param name="rotation_threshold" value="0.6"/>
      <param name="pose_freshness_threshold" value="0.5"/>
      <param name="teleop_task_dynamics" value="0.8"/>
      <param name="jnt_task_dynamics" value="0.5"/>
@@ -32,16 +32,16 @@
   
   <node pkg="leap_motion" type="leap_hands" name="leap_hands" output="screen">
     <param name="frame_name" value="yumi_body" />
-    <param name="Tx" value="0.3" />
+    <param name="Tx" value="0.4" />
     <param name="Ty" value="0.0" />
-    <param name="Tz" value="0.02" />
+    <param name="Tz" value="-0.02" />
     <param name="Tyaw" value="0.0" />
     <param name="Tpitch" value="0.0" />
     <param name="Troll" value="0.0" /> <!-- order is the same as in static tf publisher -->
   </node>
 
   <node pkg="tf" type="static_transform_publisher" name="leap_link"
-        args="0.30 0.0 0.02 0.0 0.0 0.0 /yumi_body /leap_optical_frame 50" />
+        args="0.4 0.0 -0.02 0.0 0.0 0.0 /yumi_body /leap_optical_frame 50" />
 
   <!--include file="$(find grasp_planner)/launch/test_yumi.launch">
   </include-->
