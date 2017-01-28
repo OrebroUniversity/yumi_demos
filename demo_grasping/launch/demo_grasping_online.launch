@@ -9,7 +9,7 @@
   <rosparam file="$(find demo_grasping)/hqp_tasks/task_definitions.yaml" command="load" ns="/yumi"/>
   
   <!-- LAUNCH IMPLEMENTATION -->
-  <include file="$(find yumi_launch)/launch/yumi_vel_control.launch">
+  <include file="$(find yumi_demo_launch)/launch/yumi_online_hqp.launch">
       <arg name="controllers" value="$(arg controllers)"/>
       <arg name="hardware_interface" value="$(arg hardware_interface)"/>
   </include>
@@ -48,6 +48,9 @@
      <remap from="/open_gripper" to="/yumi/yumi_gripper/release_grasp"/>
 
   </node>
+  
+  <!-- Show in Rviz   -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find demo_grasping)/launch/demo.rviz"/>
 
 
 </launch>
