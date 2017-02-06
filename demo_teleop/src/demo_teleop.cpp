@@ -447,10 +447,10 @@ class DemoTeleop {
 	    {
 		//remove previous task
 		hiqp_msgs::RemoveTask rtask;
-		rtask.request.task_name = "teleop_sensing_config";
+		rtask.request.name = "teleop_sensing_config";
 		if(!remove_controller_task_.call(rtask))
 		{
-		    ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+		    ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 		    ROS_BREAK();
 		}
 
@@ -578,10 +578,10 @@ class DemoTeleop {
 		
 		//remove previous task
 		hiqp_msgs::RemoveTask rtask;
-		rtask.request.task_name = "teleop_init_config";
+		rtask.request.name = "teleop_init_config";
 		if(!remove_controller_task_.call(rtask))
 		{
-		    ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+		    ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 		    ROS_BREAK();
 		}
 
@@ -714,10 +714,10 @@ class DemoTeleop {
 		    sleep(3);
 		    //remove previous task
 		    hiqp_msgs::RemoveTask rtask;
-		    rtask.request.task_name = "teleop_init_config";
+		    rtask.request.name = "teleop_init_config";
 		    if(!remove_controller_task_.call(rtask))
 		    {
-			ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+			ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 			ROS_BREAK();
 		    }
 		}
@@ -790,43 +790,43 @@ class DemoTeleop {
 		
 		//-------------------------------------------------------------------------//
 		//disable task
-		rtask.request.task_name = "teleop_left_frame";
+		rtask.request.name = "teleop_left_frame";
 		if(!remove_controller_task_.call(rtask))
 		{
-		    ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+		    ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 		    ROS_BREAK();
 		}
-		rtask.request.task_name = "teleop_right_frame";
+		rtask.request.name = "teleop_right_frame";
 		if(!remove_controller_task_.call(rtask))
 		{
-		    ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+		    ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 		    ROS_BREAK();
 		}
 
-		rtask.request.task_name = "teleop_left_align";
+		rtask.request.name = "teleop_left_align";
 		if(!remove_controller_task_.call(rtask))
 		{
-		    ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+		    ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 		    ROS_BREAK();
 		}
 		if(check_alignment) {
-		    rtask.request.task_name = "teleop_right_align";
+		    rtask.request.name = "teleop_right_align";
 		    if(!remove_controller_task_.call(rtask))
 		    {
-			ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+			ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 			ROS_BREAK();
 		    }
 		} else {
-		    rtask.request.task_name = "gripper_right_align";
+		    rtask.request.name = "gripper_right_align";
 		    if(!remove_controller_task_.call(rtask))
 		    {
-			ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+			ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 			ROS_BREAK();
 		    }
-		    rtask.request.task_name = "gripper_right_approach";
+		    rtask.request.name = "gripper_right_approach";
 		    if(!remove_controller_task_.call(rtask))
 		    {
-			ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+			ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 			ROS_BREAK();
 		    }
 
@@ -984,10 +984,10 @@ class DemoTeleop {
 		
 		//remove previous task
 		hiqp_msgs::RemoveTask rtask;
-		rtask.request.task_name = "teleop_init_config";
+		rtask.request.name = "teleop_init_config";
 		if(!remove_controller_task_.call(rtask))
 		{
-		    ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+		    ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 		    ROS_BREAK();
 		}
 
@@ -1078,10 +1078,10 @@ class DemoTeleop {
 		    sleep(3);
 		    //remove previous task
 		    hiqp_msgs::RemoveTask rtask;
-		    rtask.request.task_name = "teleop_init_config";
+		    rtask.request.name = "teleop_init_config";
 		    if(!remove_controller_task_.call(rtask))
 		    {
-			ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+			ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 			ROS_BREAK();
 		    }
 		}
@@ -1132,22 +1132,22 @@ class DemoTeleop {
 		
 		//-------------------------------------------------------------------------//
 		//disable task
-		rtask.request.task_name = "teleop_right_frame";
+		rtask.request.name = "teleop_right_frame";
 		if(!remove_controller_task_.call(rtask))
 		{
-		    ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+		    ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 		    ROS_BREAK();
 		}
-		rtask.request.task_name = "gripper_right_align";
+		rtask.request.name = "gripper_right_align";
 		if(!remove_controller_task_.call(rtask))
 		{
-		    ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+		    ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 		    ROS_BREAK();
 		}
-		rtask.request.task_name = "gripper_right_approach";
+		rtask.request.name = "gripper_right_approach";
 		if(!remove_controller_task_.call(rtask))
 		{
-		    ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+		    ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 		    ROS_BREAK();
 		}
 
