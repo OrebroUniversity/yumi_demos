@@ -19,7 +19,7 @@
 
      <remap from="/set_task" to="/yumi/hiqp_joint_velocity_controller/set_task" />
      <remap from="/remove_task" to="/yumi/hiqp_joint_velocity_controller/remove_task" />
-     <remap from="/add_primitive" to="/yumi/hiqp_joint_velocity_controller/add_primitive" />
+     <remap from="/add_primitive" to="/yumi/hiqp_joint_velocity_controller/set_primitive" />
   </node>
 
   
@@ -36,12 +36,12 @@
   <node pkg="tf" type="static_transform_publisher" name="leap_link"
         args="0.30 0.0 0.02 0.0 0.0 0.0 /yumi_body /leap_optical_frame 50" />
 
-  <include file="$(find grasp_planner)/launch/offline_yumi.launch">
-  </include>
+  <!--include file="$(find grasp_planner)/launch/offline_yumi.launch">
+  </include-->
   
-  <include file="$(find hiqp_ros)/launch/yumi_simulation.launch">
+  <!--include file="$(find hiqp_ros)/launch/yumi_simulation.launch">
     <arg name="start_rviz" value="false" />
-  </include>
+  </include-->
   
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find demo_teleop)/launch/yumi.rviz"/>
 

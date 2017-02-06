@@ -400,7 +400,7 @@ class DemoTeleop {
 		    strm<<teleop_sensing[i];
 		    task.request.def_params.push_back(strm.str());
 		}
-		task.request.dyn_params.push_back("TDynFirstOrder");
+		task.request.dyn_params.push_back("TDynLinear");
 		std::stringstream strm;
 		strm<<jnt_task_dynamics;
 		task.request.dyn_params.push_back(strm.str());
@@ -465,7 +465,7 @@ class DemoTeleop {
 		    strm<<teleop_init[i];
 		    task.request.def_params.push_back(strm.str());
 		}
-		task.request.dyn_params.push_back("TDynFirstOrder");
+		task.request.dyn_params.push_back("TDynLinear");
 		std::stringstream strm;
 		strm<<jnt_task_dynamics;
 		task.request.dyn_params.push_back(strm.str());
@@ -600,7 +600,7 @@ class DemoTeleop {
 	    task_proj_left.request.def_params.push_back("frame");
 	    task_proj_left.request.def_params.push_back("frame");
 	    task_proj_left.request.def_params.push_back("teleop_left_frame = teleop_gripper_left_frame");
-	    task_proj_left.request.dyn_params.push_back("TDynFirstOrder");
+	    task_proj_left.request.dyn_params.push_back("TDynLinear");
 	    strm<<teleop_task_dynamics;
 	    task_proj_left.request.dyn_params.push_back(strm.str());
 	   
@@ -614,7 +614,7 @@ class DemoTeleop {
 	    task_proj_right.request.def_params.push_back("frame");
 	    task_proj_right.request.def_params.push_back("frame");
 	    task_proj_right.request.def_params.push_back("teleop_right_frame = teleop_gripper_right_frame");
-	    task_proj_right.request.dyn_params.push_back("TDynFirstOrder");
+	    task_proj_right.request.dyn_params.push_back("TDynLinear");
 	    strm<<teleop_task_dynamics;
 	    task_proj_right.request.dyn_params.push_back(strm.str());
 
@@ -629,7 +629,7 @@ class DemoTeleop {
 	    task_align_left.request.def_params.push_back("frame");
 	    task_align_left.request.def_params.push_back("teleop_left_frame = teleop_gripper_left_frame");
 	    task_align_left.request.def_params.push_back("0");
-	    task_align_left.request.dyn_params.push_back("TDynFirstOrder");
+	    task_align_left.request.dyn_params.push_back("TDynLinear");
 	    strm<<jnt_task_dynamics; //FIXME ?
 	    task_align_left.request.dyn_params.push_back(strm.str());
 
@@ -644,7 +644,7 @@ class DemoTeleop {
 	    task_align_right.request.def_params.push_back("frame");
 	    task_align_right.request.def_params.push_back("teleop_right_frame = teleop_gripper_right_frame");
 	    task_align_right.request.def_params.push_back("0");
-	    task_align_right.request.dyn_params.push_back("TDynFirstOrder");
+	    task_align_right.request.dyn_params.push_back("TDynLinear");
 	    strm<<jnt_task_dynamics; //FIXME ?
 	    task_align_right.request.dyn_params.push_back(strm.str());
 
@@ -659,7 +659,7 @@ class DemoTeleop {
 	    task_auto_align_vertical_right.request.def_params.push_back("line");
 	    task_auto_align_vertical_right.request.def_params.push_back("object_vertical_axis = gripper_vertical_axis");
 	    task_auto_align_vertical_right.request.def_params.push_back("0");
-	    task_auto_align_vertical_right.request.dyn_params.push_back("TDynFirstOrder");
+	    task_auto_align_vertical_right.request.dyn_params.push_back("TDynLinear");
 	    strm<<jnt_task_dynamics; //FIXME ?
 	    task_auto_align_vertical_right.request.dyn_params.push_back(strm.str());
 	    
@@ -673,7 +673,7 @@ class DemoTeleop {
 	    task_auto_align_approach_right.request.def_params.push_back("line");
 	    task_auto_align_approach_right.request.def_params.push_back("line");
 	    task_auto_align_approach_right.request.def_params.push_back("gripper_approach_axis = object_vertical_axis");
-	    task_auto_align_approach_right.request.dyn_params.push_back("TDynFirstOrder");
+	    task_auto_align_approach_right.request.dyn_params.push_back("TDynLinear");
 	    strm<<jnt_task_dynamics; //FIXME ?
 	    task_auto_align_approach_right.request.dyn_params.push_back(strm.str());
 
@@ -701,7 +701,7 @@ class DemoTeleop {
 			strm<<teleop_init[i];
 			task.request.def_params.push_back(strm.str());
 		    }
-		    task.request.dyn_params.push_back("TDynFirstOrder");
+		    task.request.dyn_params.push_back("TDynLinear");
 		    std::stringstream strm;
 		    strm<<jnt_task_dynamics;
 		    task.request.dyn_params.push_back(strm.str());
@@ -887,7 +887,7 @@ class DemoTeleop {
 		    strm<<teleop_init[i];
 		    task.request.def_params.push_back(strm.str());
 		}
-		task.request.dyn_params.push_back("TDynFirstOrder");
+		task.request.dyn_params.push_back("TDynLinear");
 		std::stringstream strm;
 		strm<<jnt_task_dynamics;
 		task.request.dyn_params.push_back(strm.str());
@@ -1007,7 +1007,7 @@ class DemoTeleop {
 	    task_proj_right.request.def_params.push_back("frame");
 	    task_proj_right.request.def_params.push_back("frame");
 	    task_proj_right.request.def_params.push_back("teleop_right_frame = teleop_gripper_right_frame");
-	    task_proj_right.request.dyn_params.push_back("TDynFirstOrder");
+	    task_proj_right.request.dyn_params.push_back("TDynLinear");
 	    strm<<teleop_task_dynamics;
 	    task_proj_right.request.dyn_params.push_back(strm.str());
 
@@ -1022,7 +1022,7 @@ class DemoTeleop {
 	    task_auto_align_vertical_right.request.def_params.push_back("line");
 	    task_auto_align_vertical_right.request.def_params.push_back("object_vertical_axis = gripper_vertical_axis");
 	    task_auto_align_vertical_right.request.def_params.push_back("0");
-	    task_auto_align_vertical_right.request.dyn_params.push_back("TDynFirstOrder");
+	    task_auto_align_vertical_right.request.dyn_params.push_back("TDynLinear");
 	    strm<<jnt_task_dynamics; //FIXME ?
 	    task_auto_align_vertical_right.request.dyn_params.push_back(strm.str());
 	    
@@ -1036,7 +1036,7 @@ class DemoTeleop {
 	    task_auto_align_approach_right.request.def_params.push_back("line");
 	    task_auto_align_approach_right.request.def_params.push_back("line");
 	    task_auto_align_approach_right.request.def_params.push_back("gripper_approach_axis = object_vertical_axis");
-	    task_auto_align_approach_right.request.dyn_params.push_back("TDynFirstOrder");
+	    task_auto_align_approach_right.request.dyn_params.push_back("TDynLinear");
 	    strm<<jnt_task_dynamics; //FIXME ?
 	    task_auto_align_approach_right.request.dyn_params.push_back(strm.str());
 
@@ -1065,7 +1065,7 @@ class DemoTeleop {
 			strm<<teleop_init[i];
 			task.request.def_params.push_back(strm.str());
 		    }
-		    task.request.dyn_params.push_back("TDynFirstOrder");
+		    task.request.dyn_params.push_back("TDynLinear");
 		    std::stringstream strm;
 		    strm<<jnt_task_dynamics;
 		    task.request.dyn_params.push_back(strm.str());
