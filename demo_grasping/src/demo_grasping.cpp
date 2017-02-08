@@ -2120,10 +2120,7 @@ bool DemoGrasping::loadPersistentTasks() {
 //-----------------------------------------------------------------
 bool DemoGrasping::startDemo(std_srvs::Empty::Request& req,
                              std_srvs::Empty::Response& res) {
-  std_srvs::Empty srv;
 
-#if 0
-#endif
   deactivateHQPControl();
   resetState();
   reset_hqp_control_clt_.call(srv);
