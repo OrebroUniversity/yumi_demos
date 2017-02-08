@@ -8,30 +8,33 @@ set(CMAKE_BUILD_TYPE Debug)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   cmake_modules
-  hqp_controllers_msgs
+  hiqp_ros
   gazebo_msgs
   roscpp
   rosbag
   yumi_hw
+  grasp_planner
 )
 
-## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
 find_package(Boost REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 catkin_package(
-     CATKIN_DEPENDS roscpp rosbag hqp_controllers_msgs controller_manager_msgs gazebo_msgs yumi_hw
+     CATKIN_DEPENDS roscpp rosbag hiqp_ros controller_manager_msgs gazebo_msgs yumi_hw grasp_planner
      INCLUDE_DIRS include
 )
 
-include_directories(SYSTEM ${Eigen3_INCLUDE_DIRS})
-include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
+include_directories(include
+  ${Boost_INCLUDE_DIR}
+  ${catkin_INCLUDE_DIRS}
+  ${Eigen3_INCLUDE_DIRS}
+)
 
 ## Declare a cpp executable
-add_executable(demo_grasping src/demo_grasping.cpp
-                                src/look_what_i_found.cpp
-              )
+add_executable(demo_grasping
+  src/demo_grasping.cpp
+  src/look_what_i_found.cpp
+)
 
 
 ## Specify libraries to link a library or executable target against
