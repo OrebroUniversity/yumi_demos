@@ -41,24 +41,21 @@ namespace demo_grasping {
 /// two cylinders and the planes (i.e., inside the shell formed by the cylinders
 /// and in between the planes described by n^Tx - d = 0)*/
 struct GraspInterval {
+  hiqp_msgs::Primitive upper;
+  hiqp_msgs::Primitive lower;
+  hiqp_msgs::Primitive left;
+  hiqp_msgs::Primitive right;
+  hiqp_msgs::Primitive inner;
+  hiqp_msgs::Primitive outer;
+
   std::string obj_frame_;  // object frame
   std::string e_frame_;    // endeffector frame
   Eigen::Vector3d e_;      // endeffector point expressed in e_frame_
   float angle;
   bool isSphereGrasp, isDefaultGrasp;
-#ifdef PILE_GRASPING
-  Eigen::Vector3d p_;  // pile attack point
-  Eigen::Vector3d a_;  // approach axis
-#else
-  Eigen::Vector3d v_;  // cylinder axis
-  Eigen::Vector3d p_;  // cylinder reference point
-  double r1_, r2_;     // cylinder radii r2 !> r1
-
-  Eigen::Vector3d n1_, n2_;  // plane normals
-  double d1_, d2_;           // plane offsets d1 !> d2
-  Eigen::Vector3d n3_, n4_;  // plane normals
-  double d3_, d4_;           // plane offsets d1 !> d2
-#endif
+// PILE GRASPING STUFF
+//  Eigen::Vector3d p_;  // pile attack point
+// Eigen::Vector3d a_;  // approach axis
 };
 //-----------------------------------------------------------
 struct PlaceInterval {
@@ -104,9 +101,11 @@ class DemoGrasping {
 
   ros::NodeHandle nh_;
   ros::NodeHandle n_;
-  boost::mutex manipulator_tasks_m_;
-  boost::mutex force_change_m_;
-  boost::condition_variable cond_;
+
+  hiqp_ros::HiQPClient hiqp_client_;
+  // boost::mutex manipulator_tasks_m_;
+  // boost::mutex force_change_m_;
+  // boost::condition_variable cond_;
   double task_error_tol_;
   double task_diff_tol_;
   double task_timeout_tol_;
@@ -120,7 +119,7 @@ class DemoGrasping {
 
   //**Grasp definition - this should be modified to grasp different objects */
   GraspInterval grasp_;
-  grasp_planner::PlanGrasp grasp_plan_request;
+  grasp_planner::PlanGrasp planGraspMsg;
   std::vector<PlaceInterval> place_zones_;  ///< placement zones for the object
   Eigen::VectorXd t_prog_prev_;
 
@@ -128,8 +127,6 @@ class DemoGrasping {
   ros::Subscriber cluster_sub_;
   ros::Subscriber tf_sub_;
   ros::Subscriber img_sub_;
-
-  ros::Publisher task_feedback_pub_;
 
   /// Clients to other nodes
 
