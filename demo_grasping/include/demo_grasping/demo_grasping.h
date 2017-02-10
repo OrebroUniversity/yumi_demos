@@ -53,11 +53,12 @@ struct GraspInterval {
   Eigen::Vector3d e_;      // endeffector point expressed in e_frame_
   float angle;
   bool isSphereGrasp, isDefaultGrasp;
-// PILE GRASPING STUFF
-//  Eigen::Vector3d p_;  // pile attack point
-// Eigen::Vector3d a_;  // approach axis
+  // PILE GRASPING STUFF
+  //  Eigen::Vector3d p_;  // pile attack point
+  // Eigen::Vector3d a_;  // approach axis
 };
-//-----------------------------------------------------------
+
+/*
 struct PlaceInterval {
   std::string place_frame_;
   std::string e_frame_;  // endeffector frame
@@ -73,29 +74,13 @@ struct PlaceInterval {
 
   std::vector<double> joints_;  // pre-place joint values
 };
-////-----------------------------------------------------------
-// struct CartesianStiffness
-//{
-//    double sx;
-//    double sy;
-//    double sz;
-//    double sa;
-//    double sb;
-//    double sc;
-//};
-//-----------------------------------------------------------
+*/
+
 class DemoGrasping {
  public:
   DemoGrasping();
 
  private:
-  rosbag::Bag bag_;
-  std::string bag_path_;
-  std::string bag_name_;
-  bool write_jnts_;
-  bool write_img_;
-  bool write_tf_;
-  bool write_cluster_;
   unsigned int n_jnts;
   std::vector<std::string> link_frame_names;
 
@@ -103,33 +88,23 @@ class DemoGrasping {
   ros::NodeHandle n_;
 
   hiqp_ros::HiQPClient hiqp_client_;
-  // boost::mutex manipulator_tasks_m_;
-  // boost::mutex force_change_m_;
-  // boost::condition_variable cond_;
-  double task_error_tol_;
-  double task_diff_tol_;
-  double task_timeout_tol_;
-  bool task_status_changed_;
-  bool task_success_;
+
+  // double task_error_tol_;
+  // double task_diff_tol_;
+  // double task_timeout_tol_;
+  // bool task_status_changed_;
+  // bool task_success_;
   bool with_gazebo_;  ///<indicate whether the node is run in simulation
-  std::vector<unsigned int> pers_task_vis_ids_;  ///< indicates which persistent
-                                                 /// tasks (the ones which are
-  /// loaded) should always be
-  /// visualized
+  // std::vector<unsigned int> pers_task_vis_ids_;
 
   //**Grasp definition - this should be modified to grasp different objects */
   GraspInterval grasp_;
   grasp_planner::PlanGrasp planGraspMsg;
-  std::vector<PlaceInterval> place_zones_;  ///< placement zones for the object
+  // std::vector<PlaceInterval> place_zones_;  ///< placement zones for the
+  // object
   Eigen::VectorXd t_prog_prev_;
 
-  ros::Subscriber joint_state_sub_;
-  ros::Subscriber cluster_sub_;
-  ros::Subscriber tf_sub_;
-  ros::Subscriber img_sub_;
-
   /// Clients to other nodes
-
   ros::ServiceClient get_grasp_interval_clt_;
   ros::ServiceClient set_gazebo_physics_clt_;
 
@@ -140,20 +115,12 @@ class DemoGrasping {
 
   /// Servers
   ros::ServiceServer start_demo_srv_;
-  ros::ServiceServer look_what_i_found_srv_;
+  // ros::ServiceServer look_what_i_found_srv_;
 
   //** Manipulator joint configuration while moving the forklift */
   std::vector<double> transfer_config_;
   //** Manipulator joint configuration prior to reach-to-grasp */
   std::vector<double> sensing_config_;
-
-  //** To be called before entering a new state*/
-  bool resetState();
-
-  //** sends the filled SetTasks to the controller*/
-  bool sendStateTasks();
-  //** visualizes the tasks_*/
-  bool visualizeStateTasks(std::vector<unsigned int> const& ids);
 
   //**First deactivates the HQP control scheme (the controller will output zero
   // velocity commands afterwards) and then calls a ros::shutdown */
@@ -161,27 +128,16 @@ class DemoGrasping {
   //**like shutdown but we can run again */
   void safeReset();
 
-  bool setJointConfiguration(std::vector<double> const& joints);
   bool setGraspApproach();
-  bool setObjectExtract();
-  bool setGripperExtract(PlaceInterval const& place);
-  bool setObjectPlace(PlaceInterval const& place);
-  bool loadPersistentTasks();
+  // bool setObjectExtract();
+  // bool setGripperExtract(PlaceInterval const& place);
+  // bool setObjectPlace(PlaceInterval const& place);
+  // bool loadPersistentTasks();
   bool getGraspInterval();
 
-  /////////////////
-  //  CALLBACKS  //
-  /////////////////
-
-  void taskStatusCallback(const hqp_controllers_msgs::TaskStatusArrayPtr& msg);
-  void jointStateCallback(const sensor_msgs::JointStatePtr& msg);
-  void imgCallback(const sensor_msgs::ImagePtr& msg);
-  void tfCallback(const tf2_msgs::TFMessagePtr& msg);
-  void clusterCallback(const sensor_msgs::PointCloud2Ptr& msg);
-
   bool startDemo(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
-  bool lookWhatIFound(std_srvs::Empty::Request& req,
-                      std_srvs::Empty::Response& res);
+  // bool lookWhatIFound(std_srvs::Empty::Request& req,
+  //                   std_srvs::Empty::Response& res);
 };
 
 }  // end namespace hqp controllers

@@ -3,6 +3,7 @@ project(demo_grasping)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_CXX_FLAGS "-Wno-missing-braces")
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -21,8 +22,8 @@ find_package(Boost REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 catkin_package(
-     CATKIN_DEPENDS roscpp rosbag hiqp_ros controller_manager_msgs gazebo_msgs yumi_hw grasp_planner
-     INCLUDE_DIRS include
+  CATKIN_DEPENDS roscpp rosbag hiqp_ros controller_manager_msgs gazebo_msgs yumi_hw grasp_planner
+  INCLUDE_DIRS include
 )
 
 include_directories(include
@@ -34,7 +35,7 @@ include_directories(include
 ## Declare a cpp executable
 add_executable(demo_grasping
   src/demo_grasping.cpp
-  src/look_what_i_found.cpp
+#  src/look_what_i_found.cpp
 )
 
 
