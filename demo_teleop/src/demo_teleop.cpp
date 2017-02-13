@@ -400,7 +400,7 @@ class DemoTeleop {
 		    strm<<teleop_sensing[i];
 		    task.request.def_params.push_back(strm.str());
 		}
-		task.request.dyn_params.push_back("TDynFirstOrder");
+		task.request.dyn_params.push_back("TDynLinear");
 		std::stringstream strm;
 		strm<<jnt_task_dynamics;
 		task.request.dyn_params.push_back(strm.str());
@@ -447,10 +447,10 @@ class DemoTeleop {
 	    {
 		//remove previous task
 		hiqp_msgs::RemoveTask rtask;
-		rtask.request.task_name = "teleop_sensing_config";
+		rtask.request.name = "teleop_sensing_config";
 		if(!remove_controller_task_.call(rtask))
 		{
-		    ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+		    ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 		    ROS_BREAK();
 		}
 
@@ -465,7 +465,7 @@ class DemoTeleop {
 		    strm<<teleop_init[i];
 		    task.request.def_params.push_back(strm.str());
 		}
-		task.request.dyn_params.push_back("TDynFirstOrder");
+		task.request.dyn_params.push_back("TDynLinear");
 		std::stringstream strm;
 		strm<<jnt_task_dynamics;
 		task.request.dyn_params.push_back(strm.str());
@@ -578,10 +578,10 @@ class DemoTeleop {
 		
 		//remove previous task
 		hiqp_msgs::RemoveTask rtask;
-		rtask.request.task_name = "teleop_init_config";
+		rtask.request.name = "teleop_init_config";
 		if(!remove_controller_task_.call(rtask))
 		{
-		    ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+		    ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 		    ROS_BREAK();
 		}
 
@@ -600,7 +600,7 @@ class DemoTeleop {
 	    task_proj_left.request.def_params.push_back("frame");
 	    task_proj_left.request.def_params.push_back("frame");
 	    task_proj_left.request.def_params.push_back("teleop_left_frame = teleop_gripper_left_frame");
-	    task_proj_left.request.dyn_params.push_back("TDynFirstOrder");
+	    task_proj_left.request.dyn_params.push_back("TDynLinear");
 	    strm<<teleop_task_dynamics;
 	    task_proj_left.request.dyn_params.push_back(strm.str());
 	   
@@ -614,7 +614,7 @@ class DemoTeleop {
 	    task_proj_right.request.def_params.push_back("frame");
 	    task_proj_right.request.def_params.push_back("frame");
 	    task_proj_right.request.def_params.push_back("teleop_right_frame = teleop_gripper_right_frame");
-	    task_proj_right.request.dyn_params.push_back("TDynFirstOrder");
+	    task_proj_right.request.dyn_params.push_back("TDynLinear");
 	    strm<<teleop_task_dynamics;
 	    task_proj_right.request.dyn_params.push_back(strm.str());
 
@@ -629,7 +629,7 @@ class DemoTeleop {
 	    task_align_left.request.def_params.push_back("frame");
 	    task_align_left.request.def_params.push_back("teleop_left_frame = teleop_gripper_left_frame");
 	    task_align_left.request.def_params.push_back("0");
-	    task_align_left.request.dyn_params.push_back("TDynFirstOrder");
+	    task_align_left.request.dyn_params.push_back("TDynLinear");
 	    strm<<jnt_task_dynamics; //FIXME ?
 	    task_align_left.request.dyn_params.push_back(strm.str());
 
@@ -644,7 +644,7 @@ class DemoTeleop {
 	    task_align_right.request.def_params.push_back("frame");
 	    task_align_right.request.def_params.push_back("teleop_right_frame = teleop_gripper_right_frame");
 	    task_align_right.request.def_params.push_back("0");
-	    task_align_right.request.dyn_params.push_back("TDynFirstOrder");
+	    task_align_right.request.dyn_params.push_back("TDynLinear");
 	    strm<<jnt_task_dynamics; //FIXME ?
 	    task_align_right.request.dyn_params.push_back(strm.str());
 
@@ -659,7 +659,7 @@ class DemoTeleop {
 	    task_auto_align_vertical_right.request.def_params.push_back("line");
 	    task_auto_align_vertical_right.request.def_params.push_back("object_vertical_axis = gripper_vertical_axis");
 	    task_auto_align_vertical_right.request.def_params.push_back("0");
-	    task_auto_align_vertical_right.request.dyn_params.push_back("TDynFirstOrder");
+	    task_auto_align_vertical_right.request.dyn_params.push_back("TDynLinear");
 	    strm<<jnt_task_dynamics; //FIXME ?
 	    task_auto_align_vertical_right.request.dyn_params.push_back(strm.str());
 	    
@@ -673,7 +673,7 @@ class DemoTeleop {
 	    task_auto_align_approach_right.request.def_params.push_back("line");
 	    task_auto_align_approach_right.request.def_params.push_back("line");
 	    task_auto_align_approach_right.request.def_params.push_back("gripper_approach_axis = object_vertical_axis");
-	    task_auto_align_approach_right.request.dyn_params.push_back("TDynFirstOrder");
+	    task_auto_align_approach_right.request.dyn_params.push_back("TDynLinear");
 	    strm<<jnt_task_dynamics; //FIXME ?
 	    task_auto_align_approach_right.request.dyn_params.push_back(strm.str());
 
@@ -701,7 +701,7 @@ class DemoTeleop {
 			strm<<teleop_init[i];
 			task.request.def_params.push_back(strm.str());
 		    }
-		    task.request.dyn_params.push_back("TDynFirstOrder");
+		    task.request.dyn_params.push_back("TDynLinear");
 		    std::stringstream strm;
 		    strm<<jnt_task_dynamics;
 		    task.request.dyn_params.push_back(strm.str());
@@ -714,10 +714,10 @@ class DemoTeleop {
 		    sleep(3);
 		    //remove previous task
 		    hiqp_msgs::RemoveTask rtask;
-		    rtask.request.task_name = "teleop_init_config";
+		    rtask.request.name = "teleop_init_config";
 		    if(!remove_controller_task_.call(rtask))
 		    {
-			ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+			ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 			ROS_BREAK();
 		    }
 		}
@@ -790,43 +790,43 @@ class DemoTeleop {
 		
 		//-------------------------------------------------------------------------//
 		//disable task
-		rtask.request.task_name = "teleop_left_frame";
+		rtask.request.name = "teleop_left_frame";
 		if(!remove_controller_task_.call(rtask))
 		{
-		    ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+		    ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 		    ROS_BREAK();
 		}
-		rtask.request.task_name = "teleop_right_frame";
+		rtask.request.name = "teleop_right_frame";
 		if(!remove_controller_task_.call(rtask))
 		{
-		    ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+		    ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 		    ROS_BREAK();
 		}
 
-		rtask.request.task_name = "teleop_left_align";
+		rtask.request.name = "teleop_left_align";
 		if(!remove_controller_task_.call(rtask))
 		{
-		    ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+		    ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 		    ROS_BREAK();
 		}
 		if(check_alignment) {
-		    rtask.request.task_name = "teleop_right_align";
+		    rtask.request.name = "teleop_right_align";
 		    if(!remove_controller_task_.call(rtask))
 		    {
-			ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+			ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 			ROS_BREAK();
 		    }
 		} else {
-		    rtask.request.task_name = "gripper_right_align";
+		    rtask.request.name = "gripper_right_align";
 		    if(!remove_controller_task_.call(rtask))
 		    {
-			ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+			ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 			ROS_BREAK();
 		    }
-		    rtask.request.task_name = "gripper_right_approach";
+		    rtask.request.name = "gripper_right_approach";
 		    if(!remove_controller_task_.call(rtask))
 		    {
-			ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+			ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 			ROS_BREAK();
 		    }
 
@@ -887,7 +887,7 @@ class DemoTeleop {
 		    strm<<teleop_init[i];
 		    task.request.def_params.push_back(strm.str());
 		}
-		task.request.dyn_params.push_back("TDynFirstOrder");
+		task.request.dyn_params.push_back("TDynLinear");
 		std::stringstream strm;
 		strm<<jnt_task_dynamics;
 		task.request.dyn_params.push_back(strm.str());
@@ -984,10 +984,10 @@ class DemoTeleop {
 		
 		//remove previous task
 		hiqp_msgs::RemoveTask rtask;
-		rtask.request.task_name = "teleop_init_config";
+		rtask.request.name = "teleop_init_config";
 		if(!remove_controller_task_.call(rtask))
 		{
-		    ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+		    ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 		    ROS_BREAK();
 		}
 
@@ -1007,7 +1007,7 @@ class DemoTeleop {
 	    task_proj_right.request.def_params.push_back("frame");
 	    task_proj_right.request.def_params.push_back("frame");
 	    task_proj_right.request.def_params.push_back("teleop_right_frame = teleop_gripper_right_frame");
-	    task_proj_right.request.dyn_params.push_back("TDynFirstOrder");
+	    task_proj_right.request.dyn_params.push_back("TDynLinear");
 	    strm<<teleop_task_dynamics;
 	    task_proj_right.request.dyn_params.push_back(strm.str());
 
@@ -1022,7 +1022,7 @@ class DemoTeleop {
 	    task_auto_align_vertical_right.request.def_params.push_back("line");
 	    task_auto_align_vertical_right.request.def_params.push_back("object_vertical_axis = gripper_vertical_axis");
 	    task_auto_align_vertical_right.request.def_params.push_back("0");
-	    task_auto_align_vertical_right.request.dyn_params.push_back("TDynFirstOrder");
+	    task_auto_align_vertical_right.request.dyn_params.push_back("TDynLinear");
 	    strm<<jnt_task_dynamics; //FIXME ?
 	    task_auto_align_vertical_right.request.dyn_params.push_back(strm.str());
 	    
@@ -1036,7 +1036,7 @@ class DemoTeleop {
 	    task_auto_align_approach_right.request.def_params.push_back("line");
 	    task_auto_align_approach_right.request.def_params.push_back("line");
 	    task_auto_align_approach_right.request.def_params.push_back("gripper_approach_axis = object_vertical_axis");
-	    task_auto_align_approach_right.request.dyn_params.push_back("TDynFirstOrder");
+	    task_auto_align_approach_right.request.dyn_params.push_back("TDynLinear");
 	    strm<<jnt_task_dynamics; //FIXME ?
 	    task_auto_align_approach_right.request.dyn_params.push_back(strm.str());
 
@@ -1065,7 +1065,7 @@ class DemoTeleop {
 			strm<<teleop_init[i];
 			task.request.def_params.push_back(strm.str());
 		    }
-		    task.request.dyn_params.push_back("TDynFirstOrder");
+		    task.request.dyn_params.push_back("TDynLinear");
 		    std::stringstream strm;
 		    strm<<jnt_task_dynamics;
 		    task.request.dyn_params.push_back(strm.str());
@@ -1078,10 +1078,10 @@ class DemoTeleop {
 		    sleep(3);
 		    //remove previous task
 		    hiqp_msgs::RemoveTask rtask;
-		    rtask.request.task_name = "teleop_init_config";
+		    rtask.request.name = "teleop_init_config";
 		    if(!remove_controller_task_.call(rtask))
 		    {
-			ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+			ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 			ROS_BREAK();
 		    }
 		}
@@ -1132,22 +1132,22 @@ class DemoTeleop {
 		
 		//-------------------------------------------------------------------------//
 		//disable task
-		rtask.request.task_name = "teleop_right_frame";
+		rtask.request.name = "teleop_right_frame";
 		if(!remove_controller_task_.call(rtask))
 		{
-		    ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+		    ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 		    ROS_BREAK();
 		}
-		rtask.request.task_name = "gripper_right_align";
+		rtask.request.name = "gripper_right_align";
 		if(!remove_controller_task_.call(rtask))
 		{
-		    ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+		    ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 		    ROS_BREAK();
 		}
-		rtask.request.task_name = "gripper_right_approach";
+		rtask.request.name = "gripper_right_approach";
 		if(!remove_controller_task_.call(rtask))
 		{
-		    ROS_ERROR("could not remove task %s",rtask.request.task_name.c_str());
+		    ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 		    ROS_BREAK();
 		}
 
