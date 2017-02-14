@@ -24,7 +24,7 @@ namespace demo_grasping {
 
 //#define PILE_GRASPING 1
 
-#define DYNAMICS_GAIN -0.5
+#define DYNAMICS_GAIN 0.5
 #define ALIGNMENT_ANGLE 0.05
 
 #define SAFETY_HEIGHT 0.34
@@ -128,7 +128,8 @@ class DemoGrasping {
   //**like shutdown but we can run again */
   void safeReset();
 
-  bool setGraspApproach();
+  bool doGraspAndLift();
+  // bool setGraspApproach();
   // bool setObjectExtract();
   // bool setGripperExtract(PlaceInterval const& place);
   // bool setObjectPlace(PlaceInterval const& place);
