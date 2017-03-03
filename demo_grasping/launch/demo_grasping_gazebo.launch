@@ -1,11 +1,16 @@
 <?xml version="1.0"?>
 <launch>
 
-  <include file="$(find hiqp_demos)/launch/yumi_simulation.launch"/>
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find demo_grasping)/launch/demo.rviz"/>
+  <param name="use_sim_time" type="bool" value="true"/>
+  <include file="$(find hiqp_demos)/launch/yumi_simulation.launch">
+    <arg name="debug" value="false"/>
+  </include>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find demo_grasping)/launch/demo.rviz">
+    <param name="use_sim_time" type="bool" value="true"/>
+  </node>
 
   <!-- launch the demo_grasping node -->
-  <node name="demo_grasping" pkg="demo_grasping" type="demo_grasping" respawn="false" output="screen" launch-prefix="xterm -e gdb --args">
+  <node name="demo_grasping" pkg="demo_grasping" type="demo_grasping" respawn="false" output="screen"> <!-- launch-prefix="xterm -e gdb -args" -->
      <param name="with_gazebo" type="bool" value="true"/>
 
      <!--
@@ -24,10 +29,10 @@
      <!-- prototype grasp frame and pose -->
      
      <param name="grasp_req_frame" value="world"/>
-     <param name="grasp_req_radius" value="0.035"/>
-     <param name="grasp_req_height" value="0.06"/>
+     <param name="grasp_req_radius" value="0.023"/>
+     <param name="grasp_req_height" value="0.07"/>
      <param name="grasp_req_px" value="0.475"/>
-     <param name="grasp_req_py" value="0.15"/>
+     <param name="grasp_req_py" value="-0.105"/>
      <param name="grasp_req_pz" value="0.12"/>
      <param name="grasp_req_ox" value="0"/>
      <param name="grasp_req_oy" value="0"/>
