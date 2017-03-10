@@ -1,18 +1,8 @@
 <?xml version="1.0"?>
 <launch>
 
-  <!-- LAUNCH INTERFACE -->
-
-  <arg name="controllers" default="joint_state_controller hqp_vel_controller"/>
-  <arg name="hardware_interface" default="VelocityJointInterface"/>
-
-  <rosparam file="$(find demo_grasping)/hqp_tasks/task_definitions.yaml" command="load" ns="/yumi"/>
-  
-  <!-- LAUNCH IMPLEMENTATION -->
-  <include file="$(find yumi_demo_launch)/launch/yumi_online_hqp.launch">
-      <arg name="controllers" value="$(arg controllers)"/>
-      <arg name="hardware_interface" value="$(arg hardware_interface)"/>
-  </include>
+  <!-- Launch separately -->
+  <!-- include file="$(find yumi_demo_launch)/launch/yumi_online_hiqp.launch"/ -->
 
   <!-- launch the demo_grasping node -->
   <node name="demo_grasping" pkg="demo_grasping" type="demo_grasping" respawn="false" output="screen" >
@@ -32,18 +22,7 @@
      <param name="grasp_req_ow" value="1"/>
      
      <remap from="/get_grasp_interval" to="/gplanner/plan_grasp"/>
-     <remap from="/task_status_array" to="/yumi/hqp_vel_controller/task_status_array"/>
-     <remap from="/set_tasks" to="/yumi/hqp_vel_controller/set_tasks"/>
-     <remap from="/remove_tasks" to="/yumi/hqp_vel_controller/remove_tasks"/>
-     <remap from="/load_tasks" to="/yumi/hqp_vel_controller/load_tasks"/>
-     <remap from="/activate_hqp_control" to="/yumi/hqp_vel_controller/activate_hqp_control"/>
-     <remap from="/reset_hqp_control" to="/yumi/hqp_vel_controller/reset_hqp_control"/>
-     <remap from="/visualize_task_geometries" to="/yumi/hqp_vel_controller/visualize_task_geometries"/>
-     <remap from="/set_physics_properties" to="/gazebo/set_physics_properties"/>
-     <remap from="/joint_states" to="/yumi/joint_states"/>
-     <remap from="/switch_controller" to="/yumi/controller_manager/switch_controller"/>
      <remap from="/reset_map" to="/gplanner/clear_map"/>
-     
      <remap from="/close_gripper" to="/yumi/yumi_gripper/do_grasp"/>
      <remap from="/open_gripper" to="/yumi/yumi_gripper/release_grasp"/>
 

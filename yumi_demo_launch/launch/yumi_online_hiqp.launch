@@ -15,10 +15,11 @@
     <remap from="/joint_states" to="/yumi/joint_states" />
 </node>
 
-<!-- Load the YAML file -->
-<rosparam file="$(find hiqp_ros)/config/yumi.yaml" command="load"/>
-<!-- Load preload configurations for YuMi and HiQP -->
-<rosparam file="$(find hiqp_ros)/config/yumi_preload_ldyn.yaml" command="load"/>
+
+<rosparam file="$(find hiqp_demos)/config/yumi.yaml" command="load"/>
+<!--
+<rosparam file="$(find hiqp_demos)/config/yumi_preload.yaml" command="load"/>
+-->
 
 <!-- load the controllers -->
 <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" args="$(arg controllers)" ns="/yumi"/>

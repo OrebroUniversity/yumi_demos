@@ -566,13 +566,13 @@ bool DemoGrasping::doGraspAndLift() {
       "lower", 2, true, true, true,
       {"TDefGeomProj", "point", "plane",
        eef_point.name + " > " + grasp_.lower.name},
-      {"TDynLinear", std::to_string(1 * DYNAMICS_GAIN)});
+      {"TDynLinear", std::to_string(1.25*DYNAMICS_GAIN)});
 
   upperT = hiqp_ros::createTaskMsg(
       "upper", 2, true, true, true,
       {"TDefGeomProj", "point", "plane",
        eef_point.name + " > " + grasp_.upper.name},
-      {"TDynLinear", std::to_string(1 * DYNAMICS_GAIN)});
+      {"TDynLinear", std::to_string(1.25*DYNAMICS_GAIN)});
 
   // Left and Right limits only for non-hardcoded grasps
   if (!grasp_.isDefaultGrasp) {
@@ -581,7 +581,7 @@ bool DemoGrasping::doGraspAndLift() {
         "left", 2, true, true, true,
         {"TDefGeomProj", "point", "plane",
          eef_point.name + " > " + grasp_.left.name},
-        {"TDynLinear", std::to_string(4.0 * DYNAMICS_GAIN)});
+        {"TDynLinear", std::to_string(DYNAMICS_GAIN)});
 
     // RIGHT GRASP INTERVAL PLANE
 
@@ -599,13 +599,13 @@ bool DemoGrasping::doGraspAndLift() {
         hiqp_ros::createTaskMsg("inner", 2, true, true, true,
                                 {"TDefGeomProj", "point", "cylinder",
                                  eef_point.name + " > " + grasp_.inner.name},
-                                {"TDynLinear", std::to_string(DYNAMICS_GAIN)});
+                                {"TDynLinear", std::to_string(0.75*DYNAMICS_GAIN)});
 
     outerT =
         hiqp_ros::createTaskMsg("outer", 2, true, true, true,
                                 {"TDefGeomProj", "point", "cylinder",
                                  eef_point.name + " < " + grasp_.outer.name},
-                                {"TDynLinear", std::to_string(DYNAMICS_GAIN)});
+                                {"TDynLinear", std::to_string(0.75*DYNAMICS_GAIN)});
 
     gripperZ = hiqp_ros::createPrimitiveMsg(
         "eef_z_axis", "line", grasp_.e_frame_, true, {0.0, 0.0, 1.0, 0.2},
@@ -631,13 +631,13 @@ bool DemoGrasping::doGraspAndLift() {
         "z_project", 2, true, true, true,
         {"TDefGeomProj", "line", "line",
          cylinderZ.name + " = " + gripperZ.name},
-        {"TDynLinear", std::to_string(2 * DYNAMICS_GAIN)});
+        {"TDynLinear", std::to_string(3.0*DYNAMICS_GAIN)});
 
     gripper_YToWorldZT = hiqp_ros::createTaskMsg(
         "y_align", 2, true, true, true,
         {"TDefGeomAlign", "line", "line",
-         gripperMinusY.name + " = " + worldZ.name, "0.2"},
-        {"TDynLinear", std::to_string(4 * DYNAMICS_GAIN)});
+         gripperMinusY.name + " = " + worldZ.name, "0.05"},
+        {"TDynLinear", std::to_string(3.0*DYNAMICS_GAIN)});
 
   } else {
     // TODO: add constraints for grasp.
@@ -664,7 +664,22 @@ bool DemoGrasping::doGraspAndLift() {
       {TaskDoneReaction::REMOVE, TaskDoneReaction::REMOVE,
        TaskDoneReaction::NONE, TaskDoneReaction::NONE, TaskDoneReaction::NONE,
        TaskDoneReaction::NONE, TaskDoneReaction::NONE, TaskDoneReaction::NONE},
-      {1e-4, 1e04, 1e-6, 1e-6, 1e-4, 1e-4, 2e-2, 2e-2});
+      {1e-4, 1e-4, 1e-6, 1e-6, 1e-4, -1e-4, 1e-4, 1e-4});
+
+  if (!with_gazebo_) {
+    yumi_hw::YumiGrasp gr;
+    gr.request.gripper_id = (grasp_.e_frame_ == "gripper_l_base") ? 1 : 2;
+
+    if (!close_gripper_clt_.call(gr)) {
+      ROS_ERROR("could not close gripper");
+      ROS_BREAK();
+    }
+
+    sleep(1);
+
+  } else {
+    sleep(1);
+  }
 
   // --------------- //
   // --- Extract --- //
@@ -687,13 +702,13 @@ bool DemoGrasping::doGraspAndLift() {
       "lower", 2, true, true, true,
       {"TDefGeomProj", "point", "plane",
        eef_point.name + " > " + lowerExtractPlane.name},
-      {"TDynLinear", std::to_string(1 * DYNAMICS_GAIN)});
+      {"TDynLinear", std::to_string(1.25*DYNAMICS_GAIN)});
 
   upperT = hiqp_ros::createTaskMsg(
       "upper", 2, true, true, true,
       {"TDefGeomProj", "point", "plane",
        eef_point.name + " > " + upperExtractPlane.name},
-      {"TDynLinear", std::to_string(1 * DYNAMICS_GAIN)});
+      {"TDynLinear", std::to_string(1.25*DYNAMICS_GAIN)});
 
   // Add these tasks.
   hiqp_client_.setTasks({lowerT, upperT});
@@ -707,7 +722,7 @@ bool DemoGrasping::doGraspAndLift() {
        TaskDoneReaction::REMOVE, TaskDoneReaction::REMOVE,
        TaskDoneReaction::REMOVE, TaskDoneReaction::REMOVE,
        TaskDoneReaction::REMOVE, TaskDoneReaction::REMOVE},
-      {1e-4, 1e04, 1e-6, 1e-6, 1e-4, 1e-4, 2e-2, 2e-2});
+      {1e-5, 1e-5, 1e-6, 1e-6, 1e-5, -1e-5, 1e-5, 1e-5});
 
   return true;
 }
@@ -787,21 +802,6 @@ bool DemoGrasping::startDemo(std_srvs::Empty::Request& req,
   }
 
   ROS_INFO("Grasp approach tasks executed successfully.");
-
-  if (!with_gazebo_) {
-    yumi_hw::YumiGrasp gr;
-    gr.request.gripper_id = (grasp_.e_frame_ == "gripper_l_base") ? 1 : 2;
-
-    if (!close_gripper_clt_.call(gr)) {
-      ROS_ERROR("could not close gripper");
-      ROS_BREAK();
-    }
-
-    sleep(1);
-
-  } else {
-    sleep(1);
-  }
 
   if (!with_gazebo_) {
     yumi_hw::YumiGrasp gr;
