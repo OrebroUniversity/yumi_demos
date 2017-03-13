@@ -135,7 +135,7 @@ class DemoTeleop {
 	
 	    add_controller_primitive_ = n_.serviceClient<hiqp_msgs::AddGeometricPrimitive>("add_primitive");
 	    add_controller_primitive_.waitForExistence();
-		
+
 	    if(runOnline) {
 
 		close_gripper_clt_ = n_.serviceClient<yumi_hw::YumiGrasp>("close_gripper");

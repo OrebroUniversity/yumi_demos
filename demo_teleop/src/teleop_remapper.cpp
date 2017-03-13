@@ -1,7 +1,8 @@
 #include <ros/ros.h>
-
+#include <std_srvs/Empty.h>
 // #include <hqp_controllers_msgs/TaskGeometry.h>
 // #include <hqp_controllers_msgs/FindCanTask.h>
+#include <gazebo_msgs/SetLinkState.h>
 #include <gazebo_msgs/LinkStates.h>
 #include <std_msgs/Float32.h>
 #include <std_msgs/Float64.h>
@@ -40,6 +41,8 @@ private:
   ros::Subscriber grasp_right_sub_;
   ros::Publisher grasp_left_pub_;
   ros::Publisher grasp_right_pub_;
+	ros::ServiceServer reset_obj_srv_;
+        ros::ServiceClient set_object_state_clt_;
   // ros::ServiceServer find_can_srv_;
   // tf::TransformListener tl;
   tf::TransformBroadcaster object_pose_bc_;
@@ -99,7 +102,37 @@ public:
     grasp_left_pub_ = nh_.advertise<std_msgs::Float64>(grasp_left_command, 10); 
     grasp_right_pub_ = nh_.advertise<std_msgs::Float64>(grasp_right_command, 10); 
 
+	    reset_obj_srv_ = nh_.advertiseService("reset_object", &TeleopRemapper::resetObjectCallback, this);
+
+	    set_object_state_clt_ = nh_.serviceClient<gazebo_msgs::SetLinkState>("gazebo/set_link_state");
+	    set_object_state_clt_.waitForExistence();
+
   }
+  //===================================================================================
+	bool resetObjectCallback(std_srvs::Empty::Request  &req,
+		std_srvs::Empty::Response &res ) {
+
+	  gazebo_msgs::SetLinkState msg;
+	  msg.request.link_state.link_name="object::object";
+          msg.request.link_state.pose.position.x=0.45;
+          msg.request.link_state.pose.position.y=0.0;
+          msg.request.link_state.pose.position.z=0.5; //make the object fall down just to make sure it doesn't intersect with the ground plane
+          msg.request.link_state.pose.orientation.x=0.0;
+          msg.request.link_state.pose.orientation.y=0.0;
+          msg.request.link_state.pose.orientation.z=0.0;
+          msg.request.link_state.pose.orientation.w=1.0;
+          msg.request.link_state.twist.linear.x=0.0;
+          msg.request.link_state.twist.linear.z=0.0;
+          msg.request.link_state.twist.linear.y=0.0;
+          msg.request.link_state.twist.angular.x=0.0;
+          msg.request.link_state.twist.angular.y=0.0;
+          msg.request.link_state.twist.angular.z=0.0;
+
+	  if(set_object_state_clt_.call(msg))
+	  return true;
+	  else
+	    return false;
+	}
   //===================================================================================
 //! Broadcasts the pose of the target object to TF -> used for visualization as a robot model in Rviz
   void linkStatesCallback(const gazebo_msgs::LinkStates::ConstPtr& msg) {
@@ -131,14 +164,14 @@ public:
   void graspLeftCallback(const std_msgs::Float32::ConstPtr& msg) {
     //std::cerr<<"grasp left callback"<<std::endl;
     std_msgs::Float64 pos;
-    pos.data=0.25-0.25*msg->data; //invert open/close motion and scale to 0.25 (max yumi gripper opening)
+    pos.data=0.025-0.025*msg->data; //invert open/close motion and scale to 0.25 (max yumi gripper opening)
     grasp_left_pub_.publish(pos);
   }
   //===================================================================================
   void graspRightCallback(const std_msgs::Float32::ConstPtr& msg) {
     //std::cerr<<"grasp right callback"<<std::endl;
     std_msgs::Float64 pos;
-    pos.data=0.25-0.25*msg->data;
+    pos.data=0.025-0.025*msg->data;
     grasp_right_pub_.publish(pos);
   }
   //===================================================================================

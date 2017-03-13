@@ -45,14 +45,11 @@
     <arg name="start_rviz" value="false" />
   </include>
   
-<!-- Spawn the target object into Gazebo -->
-<!--node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-file $(find demo_teleop)/urdf/object.urdf -urdf -z 1 -model object" /-->
-
 <!-- Load target object description onto the parameter server -->
 <param name="object_description" command="$(find xacro)/xacro.py $(find demo_teleop)/urdf/object.urdf" />
 
 <!-- Spawn the target object into Gazebo -->
-<node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-param object_description -urdf -model object -x 0.8 -y 0.0 -z 0.0"  respawn="false" output="screen"/>
+<node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-param object_description -urdf -model object -x 0.45 -y 0.0 -z 1.0"  respawn="false" output="screen"/>
 
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find demo_teleop)/launch/yumi.rviz"/>
 

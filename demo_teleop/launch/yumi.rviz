@@ -188,13 +188,13 @@ Visualization Manager:
       Frames:
         All Enabled: false
         gripper_l_base:
-          Value: true
+          Value: false
         gripper_l_finger_l:
           Value: false
         gripper_l_finger_r:
           Value: false
         gripper_r_base:
-          Value: true
+          Value: false
         gripper_r_finger_l:
           Value: false
         gripper_r_finger_r:
@@ -316,7 +316,8 @@ Visualization Manager:
       Marker Topic: /demo_teleop/tracking_state_markers
       Name: MarkerArray
       Namespaces:
-        {}
+        candy_left: true
+        candy_right: true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -424,22 +425,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1.6496
+      Distance: 0.766081
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.338562
-        Y: -0.0020584
-        Z: 0.148597
+        X: 0.409023
+        Y: 0.0418901
+        Z: 0.184638
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: -0.0902029
+      Pitch: 0.879797
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.13541
+      Yaw: 4.97041
     Saved: ~
 Window Geometry:
   Displays:
@@ -457,5 +458,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1615
-  X: 210
-  Y: 111
+  X: 77
+  Y: 16

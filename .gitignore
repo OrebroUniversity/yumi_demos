@@ -32,6 +32,8 @@ build/*/MinSizeRel/*
 build/*/RelWithDebInfo/*
 build
 
+CATKIN_IGNORE
+
 *#
 *.#
 *.obj
