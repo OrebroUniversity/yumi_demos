@@ -22,6 +22,8 @@
      <remap from="/add_primitive" to="/yumi/hiqp_joint_velocity_controller/add_primitive" />
   </node>
 
+  <node name="teleop_remapper" pkg="demo_teleop" type="teleop_remapper_node" respawn="false" output="screen" >
+  </node>
   
   <node pkg="leap_motion" type="leap_hands" name="leap_hands" output="screen">
     <param name="frame_name" value="yumi_body" />
@@ -36,13 +38,22 @@
   <node pkg="tf" type="static_transform_publisher" name="leap_link"
         args="0.30 0.0 0.02 0.0 0.0 0.0 /yumi_body /leap_optical_frame 50" />
 
-  <include file="$(find grasp_planner)/launch/offline_yumi.launch">
-  </include>
+  <!--include file="$(find grasp_planner)/launch/offline_yumi.launch">
+  </include-->
   
   <include file="$(find hiqp_ros)/launch/yumi_simulation.launch">
     <arg name="start_rviz" value="false" />
   </include>
   
+<!-- Spawn the target object into Gazebo -->
+<!--node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-file $(find demo_teleop)/urdf/object.urdf -urdf -z 1 -model object" /-->
+
+<!-- Load target object description onto the parameter server -->
+<param name="object_description" command="$(find xacro)/xacro.py $(find demo_teleop)/urdf/object.urdf" />
+
+<!-- Spawn the target object into Gazebo -->
+<node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-param object_description -urdf -model object -x 0.8 -y 0.0 -z 0.0"  respawn="false" output="screen"/>
+
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find demo_teleop)/launch/yumi.rviz"/>
 
 

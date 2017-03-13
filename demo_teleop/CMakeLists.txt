@@ -137,6 +137,7 @@ include_directories(
 
 ## Declare a C++ executable
 add_executable(demo_teleop_node src/demo_teleop.cpp)
+add_executable(teleop_remapper_node src/teleop_remapper.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -144,6 +145,10 @@ add_executable(demo_teleop_node src/demo_teleop.cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(demo_teleop_node
+   ${catkin_LIBRARIES} ${Boost_LIBRARIES}
+)
+
+target_link_libraries(teleop_remapper_node
    ${catkin_LIBRARIES} ${Boost_LIBRARIES}
 )
 
