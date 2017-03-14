@@ -677,6 +677,21 @@ class DemoTeleop {
 	    strm<<jnt_task_dynamics; //FIXME ?
 	    task_auto_align_approach_right.request.dyn_params.push_back(strm.str());
 
+	    //add task on lowest hierarchy level to bias the manipulator to a neutral joint configuration
+	    strm.clear(); 
+	    hiqp_msgs::SetTask task_neutral_configuration;
+	    task_neutral_configuration.request.name = "neutral_configuration";
+	    task_neutral_configuration.request.priority = 4;
+	    task_neutral_configuration.request.visible = 1;
+	    task_neutral_configuration.request.active = 1;
+	    task_neutral_configuration.request.def_params.push_back("TDefFullPose");
+            strm<<0;
+	    for(int i=0; i<14;i++){
+	      task_neutral_configuration.request.def_params.push_back(strm.str());}
+	    strm.clear();
+            strm<<jnt_task_dynamics;
+            task_neutral_configuration.request.dyn_params.push_back(strm.str());
+
 	    bools_mutex.lock();
 	    bool quit = quit_demo;
 	    bools_mutex.unlock();
@@ -732,6 +747,7 @@ class DemoTeleop {
 		//-------------------------------------------------------------------------//
 		//synced, enable task
 		ROS_INFO("Synced, enabling teleop task");
+
 		task_proj_left.request.active = 1;
 		if(!set_controller_task_.call(task_proj_left))
 		{
@@ -746,7 +762,13 @@ class DemoTeleop {
 		    ROS_BREAK();
 		}
 /*
-*/		
+*/		task_neutral_configuration.request.active = 1;
+		if(!set_controller_task_.call(task_neutral_configuration))
+		{
+		    ROS_ERROR("could not set task %s",task_neutral_configuration.request.name.c_str());
+		    ROS_BREAK();
+		}
+
 		task_align_left.request.active = 1;
 		if(!set_controller_task_.call(task_align_left))
 		{
