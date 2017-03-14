@@ -556,37 +556,37 @@ bool DemoGrasping::doGraspAndLift() {
 
   // Primitive for the End effector point.
   eef_point = hiqp_ros::createPrimitiveMsg(
-      "point_eef", "point", grasp_.e_frame_, true, {0, 0, 1, 0.2},
+      "point_eef", "point", grasp_.e_frame_, false, {0, 0, 1, 0.2},
       {grasp_.e_(0), grasp_.e_(1), grasp_.e_(2)});
 
   // Define tasks
 
   // LOWER GRASP INTERVAL PLANE
   lowerT = hiqp_ros::createTaskMsg(
-      "lower", 2, true, true, true,
+      "lower", 2, false, true, true,
       {"TDefGeomProj", "point", "plane",
        eef_point.name + " > " + grasp_.lower.name},
-      {"TDynLinear", std::to_string(1.25*DYNAMICS_GAIN)});
+      {"TDynLinear", std::to_string(1.25 * DYNAMICS_GAIN)});
 
   upperT = hiqp_ros::createTaskMsg(
-      "upper", 2, true, true, true,
+      "upper", 2, false, true, true,
       {"TDefGeomProj", "point", "plane",
        eef_point.name + " > " + grasp_.upper.name},
-      {"TDynLinear", std::to_string(1.25*DYNAMICS_GAIN)});
+      {"TDynLinear", std::to_string(1.25 * DYNAMICS_GAIN)});
 
   // Left and Right limits only for non-hardcoded grasps
   if (!grasp_.isDefaultGrasp) {
     // LEFT GRASP INTERVAL PLANE
-    leftT = hiqp_ros::createTaskMsg(
-        "left", 2, true, true, true,
-        {"TDefGeomProj", "point", "plane",
-         eef_point.name + " > " + grasp_.left.name},
-        {"TDynLinear", std::to_string(DYNAMICS_GAIN)});
+    leftT =
+        hiqp_ros::createTaskMsg("left", 2, false, true, true,
+                                {"TDefGeomProj", "point", "plane",
+                                 eef_point.name + " > " + grasp_.left.name},
+                                {"TDynLinear", std::to_string(DYNAMICS_GAIN)});
 
     // RIGHT GRASP INTERVAL PLANE
 
     rightT =
-        hiqp_ros::createTaskMsg("right", 2, true, true, true,
+        hiqp_ros::createTaskMsg("right", 2, false, true, true,
                                 {"TDefGeomProj", "point", "plane",
                                  eef_point.name + " > " + grasp_.right.name},
                                 {"TDynLinear", std::to_string(DYNAMICS_GAIN)});
@@ -595,32 +595,32 @@ bool DemoGrasping::doGraspAndLift() {
   if (!grasp_.isSphereGrasp) {
     // INNER CONSTRAINT CYLINDER
     // Gripper should be outside the cylinder. So ">".
-    innerT =
-        hiqp_ros::createTaskMsg("inner", 2, true, true, true,
-                                {"TDefGeomProj", "point", "cylinder",
-                                 eef_point.name + " > " + grasp_.inner.name},
-                                {"TDynLinear", std::to_string(0.75*DYNAMICS_GAIN)});
+    innerT = hiqp_ros::createTaskMsg(
+        "inner", 2, false, true, true,
+        {"TDefGeomProj", "point", "cylinder",
+         eef_point.name + " > " + grasp_.inner.name},
+        {"TDynLinear", std::to_string(0.75 * DYNAMICS_GAIN)});
 
-    outerT =
-        hiqp_ros::createTaskMsg("outer", 2, true, true, true,
-                                {"TDefGeomProj", "point", "cylinder",
-                                 eef_point.name + " < " + grasp_.outer.name},
-                                {"TDynLinear", std::to_string(0.75*DYNAMICS_GAIN)});
+    outerT = hiqp_ros::createTaskMsg(
+        "outer", 2, false, true, true,
+        {"TDefGeomProj", "point", "cylinder",
+         eef_point.name + " < " + grasp_.outer.name},
+        {"TDynLinear", std::to_string(0.75 * DYNAMICS_GAIN)});
 
     gripperZ = hiqp_ros::createPrimitiveMsg(
-        "eef_z_axis", "line", grasp_.e_frame_, true, {0.0, 0.0, 1.0, 0.2},
+        "eef_z_axis", "line", grasp_.e_frame_, false, {0.0, 0.0, 1.0, 0.2},
         {0.0, 0.0, 1.0, 0.0, 0.0, 0.0});
 
     gripperMinusY = hiqp_ros::createPrimitiveMsg(
-        "eef_y_axis", "line", grasp_.e_frame_, true, {0.0, 0.0, 1.0, 0.2},
+        "eef_y_axis", "line", grasp_.e_frame_, false, {0.0, 0.0, 1.0, 0.2},
         {0.0, -1.0, 0.0, 0.0, 0.0, 0.0});
 
     worldZ = hiqp_ros::createPrimitiveMsg("world_z", "line", grasp_.obj_frame_,
-                                          true, {0.0, 0.0, 1.0, 0.2},
+                                          false, {0.0, 0.0, 1.0, 0.2},
                                           {0.0, 0.0, 1.0, 0.0, 0.0, 0.0});
 
     cylinderZ = hiqp_ros::createPrimitiveMsg(
-        "cylinder_z", "line", grasp_.obj_frame_, true, {0.0, 0.0, 1.0, 0.2},
+        "cylinder_z", "line", grasp_.obj_frame_, false, {0.0, 0.0, 1.0, 0.2},
         {grasp_.inner.parameters[0], grasp_.inner.parameters[1],
          grasp_.inner.parameters[2], grasp_.inner.parameters[3],
          grasp_.inner.parameters[4], grasp_.inner.parameters[5]});
@@ -628,16 +628,16 @@ bool DemoGrasping::doGraspAndLift() {
     // Hand parallel to the z axis.
 
     gripperZToObjectZT = hiqp_ros::createTaskMsg(
-        "z_project", 2, true, true, true,
+        "z_project", 2, false, true, true,
         {"TDefGeomProj", "line", "line",
          cylinderZ.name + " = " + gripperZ.name},
-        {"TDynLinear", std::to_string(3.0*DYNAMICS_GAIN)});
+        {"TDynLinear", std::to_string(3.0 * DYNAMICS_GAIN)});
 
     gripper_YToWorldZT = hiqp_ros::createTaskMsg(
-        "y_align", 2, true, true, true,
+        "y_align", 2, false, true, true,
         {"TDefGeomAlign", "line", "line",
          gripperMinusY.name + " = " + worldZ.name, "0.05"},
-        {"TDynLinear", std::to_string(3.0*DYNAMICS_GAIN)});
+        {"TDynLinear", std::to_string(3.0 * DYNAMICS_GAIN)});
 
   } else {
     // TODO: add constraints for grasp.
@@ -699,16 +699,16 @@ bool DemoGrasping::doGraspAndLift() {
 
   // Modify the tasks.
   lowerT = hiqp_ros::createTaskMsg(
-      "lower", 2, true, true, true,
+      "lower", 2, false, true, true,
       {"TDefGeomProj", "point", "plane",
        eef_point.name + " > " + lowerExtractPlane.name},
-      {"TDynLinear", std::to_string(1.25*DYNAMICS_GAIN)});
+      {"TDynLinear", std::to_string(1.25 * DYNAMICS_GAIN)});
 
   upperT = hiqp_ros::createTaskMsg(
-      "upper", 2, true, true, true,
+      "upper", 2, false, true, true,
       {"TDefGeomProj", "point", "plane",
        eef_point.name + " > " + upperExtractPlane.name},
-      {"TDynLinear", std::to_string(1.25*DYNAMICS_GAIN)});
+      {"TDynLinear", std::to_string(1.25 * DYNAMICS_GAIN)});
 
   // Add these tasks.
   hiqp_client_.setTasks({lowerT, upperT});
@@ -723,6 +723,12 @@ bool DemoGrasping::doGraspAndLift() {
        TaskDoneReaction::REMOVE, TaskDoneReaction::REMOVE,
        TaskDoneReaction::REMOVE, TaskDoneReaction::REMOVE},
       {1e-5, 1e-5, 1e-6, 1e-6, 1e-5, -1e-5, 1e-5, 1e-5});
+
+  hiqp_client_.removePrimitives(
+      {eef_point.name, grasp_.upper.name, grasp_.lower.name, grasp_.left.name,
+       grasp_.right.name, grasp_.inner.name, grasp_.outer.name,
+       gripperMinusY.name, cylinderZ.name, worldZ.name, gripperZ.name,
+       lowerExtractPlane.name, upperExtractPlane.name});
 
   return true;
 }
@@ -748,8 +754,6 @@ bool DemoGrasping::doGraspAndLift() {
 //-----------------------------------------------------------------
 bool DemoGrasping::startDemo(std_srvs::Empty::Request& req,
                              std_srvs::Empty::Response& res) {
-  hiqp_client_.resetHiQPController();
-
   // hiqp_client_.loadPersistentTasks(); TODO: Must implement this.
 
   if (!with_gazebo_) {
