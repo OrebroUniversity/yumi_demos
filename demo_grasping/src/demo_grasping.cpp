@@ -572,7 +572,7 @@ bool DemoGrasping::doGraspAndLift() {
       "upper", 2, false, true, true,
       {"TDefGeomProj", "point", "plane",
        eef_point.name + " > " + grasp_.upper.name},
-      {"TDynLinear", std::to_string(1.25 * DYNAMICS_GAIN)});
+      {"TDynLinear", std::to_string(1.75 * DYNAMICS_GAIN)});
 
   // Left and Right limits only for non-hardcoded grasps
   if (!grasp_.isDefaultGrasp) {
