@@ -5,15 +5,16 @@
   This file:
    - launches Gazebo without gui
    - spawns the urdf model of YuMi on the parameter server
-   - loads the yumi.yaml yaml file
-   - loads the yumi_preload.yaml yaml file (predefined joint limits, primitives and tasks)
+   - loads the yumi.yaml file
+   - if uncommented, loads the yumi_preload.yaml yaml file (predefined joint limits, primitives and tasks)
    - spawns controllers specified by the controllers argument
    - launches the robot_state_publisher node
-   - launches RviZ to visualize YuMi and HiQP
+   - launches RviZ to visualize YuMi and the HiQP tasks
   -->
 
-  <arg name="hardware_interface" default="VelocityJointInterface"/>
-  <arg name="controllers" default="joint_state_controller hiqp_joint_velocity_controller"/>
+  <arg name="arm_hwi" default="VelocityJointInterface"/>
+  <arg name="gripper_hwi" default="EffortJointInterface"/>
+  <arg name="controllers" default="joint_state_controller hiqp_joint_velocity_controller yumi_gripper_r_effort_position_controller yumi_gripper_l_effort_position_controller"/>
 
   <arg name="paused" default="false"/>
   <arg name="use_sim_time" default="true"/>
@@ -33,7 +34,7 @@
   </include>
 
   <param name="robot_description" 
-         command="$(find xacro)/xacro.py '$(find yumi_description)/urdf/yumi.urdf.xacro' prefix:=$(arg hardware_interface)" />
+         command="$(find xacro)/xacro.py '$(find yumi_description)/urdf/yumi.urdf.xacro' arm_hwi:=$(arg arm_hwi) gripper_hwi:=$(arg gripper_hwi)" />
 
   <node name="urdf_spawner" 
         pkg="gazebo_ros" 
@@ -42,9 +43,8 @@
         output="screen"
         args="-urdf -model yumi -param robot_description"/>
 
-
-  <rosparam file="$(find hiqp_ros)/config/yumi.yaml" command="load"/>
-  <rosparam file="$(find hiqp_ros)/config/yumi_preload.yaml" command="load"/>
+   <rosparam file="$(find hiqp_demos)/config/yumi.yaml" command="load"/>
+  <!--rosparam file="$(find hiqp_demos)/config/yumi_preload.yaml" command="load"/-->
 
   <node name="controller_spawner" 
         pkg="controller_manager" 
@@ -62,6 +62,6 @@
     <remap from="/joint_states" to="/yumi/joint_states" />
   </node>
 
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find hiqp_ros)/launch/yumi.rviz"/>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find hiqp_demos)/launch/yumi.rviz"/>
 
 </launch>

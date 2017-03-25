@@ -11,8 +11,9 @@
 <!--load predifined persistent task descriptions (joint limit avoidance, self-collision avoidance ...) definitions for the HQP controller -->
  <!--rosparam file="$(find demo_grasping)/hqp_tasks/task_definitions.yaml" command="load" ns="/yumi"/-->
 
- <!-- the urdf/sdf parameter -->
-  <param name="robot_description" command="$(find xacro)/xacro.py '$(find yumi_description)/urdf/yumi.urdf.xacro' prefix:=$(arg hardware_interface)" />
+<!-- the urdf/sdf parameter -->
+  <param name="robot_description" 
+         command="$(find xacro)/xacro.py '$(find yumi_description)/urdf/yumi.urdf.xacro' arm_hwi:=$(arg hardware_interface) gripper_hwi:=$(arg hardware_interface)" />
 
 <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
     <remap from="/joint_states" to="/yumi/joint_states" />
