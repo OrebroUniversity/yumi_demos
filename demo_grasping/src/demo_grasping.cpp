@@ -572,7 +572,7 @@ bool DemoGrasping::doGraspAndLift() {
       "upper", 2, false, true, true,
       {"TDefGeomProj", "point", "plane",
        eef_point.name + " > " + grasp_.upper.name},
-      {"TDynLinear", std::to_string(1.75 * DYNAMICS_GAIN)});
+      {"TDynLinear", std::to_string(1.25 * DYNAMICS_GAIN)});
 
   // Left and Right limits only for non-hardcoded grasps
   if (!grasp_.isDefaultGrasp) {
@@ -664,7 +664,7 @@ bool DemoGrasping::doGraspAndLift() {
       {TaskDoneReaction::REMOVE, TaskDoneReaction::REMOVE,
        TaskDoneReaction::NONE, TaskDoneReaction::NONE, TaskDoneReaction::NONE,
        TaskDoneReaction::NONE, TaskDoneReaction::NONE, TaskDoneReaction::NONE},
-      {1e-4, 1e-4, 1e-6, 1e-6, 1e-4, -1e-4, 1e-4, 1e-4});
+      {1e-4, 1e-4, 1e-6, 1e-6, 1e-4, 1e-4, 1e-4, 1e-4});
 
   if (!with_gazebo_) {
     yumi_hw::YumiGrasp gr;
@@ -691,7 +691,7 @@ bool DemoGrasping::doGraspAndLift() {
   lowerExtractPlane.name = "lower_extract_plane";
 
   upperExtractPlane = grasp_.upper;
-  upperExtractPlane.parameters[3] -= 0.20;
+  upperExtractPlane.parameters[3] -= 0.23;
   upperExtractPlane.name = "upper_extract_plane";
 
   // Additional primitives for extract position.
@@ -722,7 +722,7 @@ bool DemoGrasping::doGraspAndLift() {
        TaskDoneReaction::REMOVE, TaskDoneReaction::REMOVE,
        TaskDoneReaction::REMOVE, TaskDoneReaction::REMOVE,
        TaskDoneReaction::REMOVE, TaskDoneReaction::REMOVE},
-      {1e-5, 1e-5, 1e-6, 1e-6, 1e-5, -1e-5, 1e-5, 1e-5});
+      {1e-2, 1e-2, 1e-6, 1e-6, 1e-2, -1e-2, 1e-2, 1e-2});
 
   hiqp_client_.removePrimitives(
       {eef_point.name, grasp_.upper.name, grasp_.lower.name, grasp_.left.name,
