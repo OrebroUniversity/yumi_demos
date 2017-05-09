@@ -18,6 +18,9 @@
 #include <boost/thread/mutex.hpp>
 #include <vector>
 
+#include <tf/transform_datatypes.h>
+#include <tf/transform_listener.h>
+
 namespace demo_grasping {
 //-----------------------------------------------------------
 //#define HQP_GRIPPER_JOINT 1
@@ -88,6 +91,10 @@ class DemoGrasping {
   ros::NodeHandle n_;
 
   hiqp_ros::HiQPClient hiqp_client_;
+  ros::ServiceClient start_client_ =
+      n_.serviceClient<std_srvs::Empty>("/gplanner/start_tracker");
+  ros::ServiceClient stop_client_ =
+      n_.serviceClient<std_srvs::Empty>("/gplanner/stop_tracker");
 
   // double task_error_tol_;
   // double task_diff_tol_;
@@ -128,6 +135,9 @@ class DemoGrasping {
   //**like shutdown but we can run again */
   void safeReset();
 
+  void startTracker();
+  void stopTracker();
+
   bool doGraspAndLift();
   // bool setGraspApproach();
   // bool setObjectExtract();
@@ -135,6 +145,9 @@ class DemoGrasping {
   // bool setObjectPlace(PlaceInterval const& place);
   // bool loadPersistentTasks();
   bool getGraspInterval();
+
+  tf::TransformListener transform_listener_;
+  ros::Publisher pose_pub_;
 
   bool startDemo(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
   // bool lookWhatIFound(std_srvs::Empty::Request& req,

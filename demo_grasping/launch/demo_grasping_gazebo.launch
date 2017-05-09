@@ -30,7 +30,7 @@
      <param name="grasp_req_frame" value="world"/>
      <param name="grasp_req_radius" value="0.023"/>
      <param name="grasp_req_height" value="0.07"/>
-     <param name="grasp_req_px" value="0.475"/>
+     <param name="grasp_req_px" value="0.465"/>
      <param name="grasp_req_py" value="-0.105"/>
      <param name="grasp_req_pz" value="0.12"/>
      <param name="grasp_req_ox" value="0"/>

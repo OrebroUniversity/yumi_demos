@@ -15,7 +15,7 @@
      <param name="grasp_req_height" value="0.1"/>
      <param name="grasp_req_px" value="0.45"/>
      <param name="grasp_req_py" value="0.0"/>
-     <param name="grasp_req_pz" value="0.12"/>
+     <param name="grasp_req_pz" value="0.08"/>
      <param name="grasp_req_ox" value="0"/>
      <param name="grasp_req_oy" value="0"/>
      <param name="grasp_req_oz" value="0"/>

@@ -18,6 +18,12 @@ DemoGrasping::DemoGrasping()
   // global handle
   n_ = ros::NodeHandle();
 
+  start_client_ = n_.serviceClient<std_srvs::Empty>("/gplanner/start_tracker");
+  stop_client_ = n_.serviceClient<std_srvs::Empty>("/gplanner/stop_tracker");
+
+  start_client_.waitForExistence();
+  stop_client_.waitForExistence();
+
   // get params
   nh_.param<bool>("with_gazebo", with_gazebo_, false);
   if (with_gazebo_) ROS_INFO("Grasping experiments running in Gazebo.");
@@ -109,6 +115,9 @@ DemoGrasping::DemoGrasping()
   grasp_.e_.setZero();  // endeffector point expressed in the endeffector frame
   grasp_.isSphereGrasp = false;
   grasp_.isDefaultGrasp = true;
+
+  // Publisher for pose to feed into moveit.
+  pose_pub_ = n_.advertise<geometry_msgs::Transform>("/final_pose", 1);
 }
 
 void DemoGrasping::safeShutdown() {
@@ -118,6 +127,26 @@ void DemoGrasping::safeShutdown() {
 }
 
 void DemoGrasping::safeReset() { hiqp_client_.resetHiQPController(); }
+
+void DemoGrasping::startTracker() {
+  std_srvs::Empty empty_msg1;
+  if (start_client_.call(empty_msg1)) {
+    ROS_INFO("Started tracker.");
+  } else {
+    ROS_ERROR("Couldn't call service start_tracker.");
+    return;
+  }
+}
+
+void DemoGrasping::stopTracker() {
+  std_srvs::Empty empty_msg2;
+  if (stop_client_.call(empty_msg2)) {
+    ROS_INFO("Stopped tracker.");
+  } else {
+    ROS_ERROR("Couldn't call service stop_tracker.");
+    return;
+  }
+}
 
 bool DemoGrasping::getGraspInterval() {
   // get the grasp intervall
@@ -180,7 +209,6 @@ bool DemoGrasping::getGraspInterval() {
     // grasping with left
     ROS_INFO("Grasping with left");
     planGraspMsg.response = lPlanGraspMsg.response;
-    std::cout << planGraspMsg.response;
     grasp_.e_frame_ = "gripper_l_base";  // endeffector frame
   }
 
@@ -566,13 +594,13 @@ bool DemoGrasping::doGraspAndLift() {
       "lower", 2, false, true, true,
       {"TDefGeomProj", "point", "plane",
        eef_point.name + " > " + grasp_.lower.name},
-      {"TDynLinear", std::to_string(1.25 * DYNAMICS_GAIN)});
+      {"TDynLinear", std::to_string(2.0 * DYNAMICS_GAIN)});
 
   upperT = hiqp_ros::createTaskMsg(
       "upper", 2, false, true, true,
       {"TDefGeomProj", "point", "plane",
        eef_point.name + " > " + grasp_.upper.name},
-      {"TDynLinear", std::to_string(1.25 * DYNAMICS_GAIN)});
+      {"TDynLinear", std::to_string(2.0 * DYNAMICS_GAIN)});
 
   // Left and Right limits only for non-hardcoded grasps
   if (!grasp_.isDefaultGrasp) {
@@ -664,7 +692,7 @@ bool DemoGrasping::doGraspAndLift() {
       {TaskDoneReaction::REMOVE, TaskDoneReaction::REMOVE,
        TaskDoneReaction::NONE, TaskDoneReaction::NONE, TaskDoneReaction::NONE,
        TaskDoneReaction::NONE, TaskDoneReaction::NONE, TaskDoneReaction::NONE},
-      {1e-4, 1e-4, 1e-6, 1e-6, 1e-4, 1e-4, 1e-4, 1e-4});
+      {1e-3, 1e-3, 1e-6, 1e-6, 1e-3, 1e-3, 1e-3, 1e-3});
 
   if (!with_gazebo_) {
     yumi_hw::YumiGrasp gr;
@@ -681,6 +709,21 @@ bool DemoGrasping::doGraspAndLift() {
     sleep(1);
   }
 
+  tf::StampedTransform eef_pose;
+  try {
+
+    transform_listener_.waitForTransform("world", "gripper_l_base", ros::Time(0), ros::Duration(1));
+    transform_listener_.lookupTransform("world", "gripper_l_base", ros::Time(0), eef_pose);
+    
+  } catch(tf::TransformException& ex) {
+    ROS_ERROR("%s", ex.what());
+  }
+
+  geometry_msgs::Transform msg;
+  tf::transformTFToMsg(eef_pose, msg);
+  pose_pub_.publish(msg);
+
+  return true;
   // --------------- //
   // --- Extract --- //
   // --------------- //
@@ -788,6 +831,12 @@ bool DemoGrasping::startDemo(std_srvs::Empty::Request& req,
 
   // TODO: Detect Stagnation.
 
+  startTracker();
+
+  sleep(5);
+
+  stopTracker();
+
   // GRASP APPROACH
   ROS_INFO("Trying grasp approach.");
 
@@ -826,9 +875,11 @@ bool DemoGrasping::startDemo(std_srvs::Empty::Request& req,
     sleep(1);
   }
 
-  ROS_INFO("Trying to put the manipulator in transfer configuration.");
+  hiqp_client_.removeAllTasks();
+  hiqp_client_.resetHiQPController();
+//  ROS_INFO("Trying to put the manipulator in transfer configuration.");
 
-  hiqp_client_.setJointAngles(sensing_config_);
+//  hiqp_client_.setJointAngles(sensing_config_);
 
   ROS_INFO("DEMO FINISHED.");
 
