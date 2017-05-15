@@ -17,7 +17,9 @@
 
 
 <rosparam file="$(find hiqp_demos)/config/yumi.yaml" command="load"/>
-<!-- rosparam file="$(find hiqp_demos)/config/yumi_preload_joint_limits.yaml" command="load"/ -->
+<!--
+<rosparam file="$(find hiqp_demos)/config/yumi_preload.yaml" command="load"/>
+-->
 
 <!-- load the controllers -->
 <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" args="$(arg controllers)" ns="/yumi"/>
@@ -37,6 +39,15 @@
 
 <!-- Run RViz for visualization instead of the Gazebo GUI -->
 <node name="rviz" pkg="rviz" type="rviz" args="-d $(find demo_grasping)/launch/demo.rviz" if="$(arg rviz)"/>
+
+<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+  <param name="use_gui" value="false"/>
+  <param name="rate" value="50.0" />
+  <rosparam param="/source_list">[yumi/joint_states]</rosparam>
+</node>
+
+
+<node name="hiqp_joint_trajectory_controller_node" type="hiqp_joint_trajectory_controller_node" pkg="hiqp_ros" output="screen"/>
 
 </launch>
 

@@ -28,6 +28,11 @@ DemoGrasping::DemoGrasping()
   nh_.param<bool>("with_gazebo", with_gazebo_, false);
   if (with_gazebo_) ROS_INFO("Grasping experiments running in Gazebo.");
 
+  if (with_gazebo_)
+    DYNAMICS_GAIN = 0.5;
+  else
+    DYNAMICS_GAIN = 0.1;
+
   // register general callbacks
   start_demo_srv_ =
       nh_.advertiseService("start_demo", &DemoGrasping::startDemo, this);
@@ -579,6 +584,14 @@ bool DemoGrasping::doGraspAndLift() {
   hiqp_msgs::Primitive eef_point;
   hiqp_msgs::Primitive gripperZ, gripperMinusY, worldZ, cylinderZ;
 
+  double tolerance1 = 5e-4;
+  double tolerance2 = 1e-6;
+
+  if (with_gazebo_) {
+    tolerance1 = 1e-3;
+    tolerance2 = 1e-6;
+  }
+
   // Some assertions to make sure that the grasping constraints are alright.
   // TODO: Write this.
 
@@ -692,7 +705,8 @@ bool DemoGrasping::doGraspAndLift() {
       {TaskDoneReaction::REMOVE, TaskDoneReaction::REMOVE,
        TaskDoneReaction::NONE, TaskDoneReaction::NONE, TaskDoneReaction::NONE,
        TaskDoneReaction::NONE, TaskDoneReaction::NONE, TaskDoneReaction::NONE},
-      {1e-3, 1e-3, 1e-6, 1e-6, 1e-3, 1e-3, 1e-3, 1e-3});
+      {tolerance1, tolerance1, 1e-6, 1e-6, tolerance1, tolerance1, tolerance1,
+       tolerance1});
 
   if (!with_gazebo_) {
     yumi_hw::YumiGrasp gr;
@@ -711,11 +725,12 @@ bool DemoGrasping::doGraspAndLift() {
 
   tf::StampedTransform eef_pose;
   try {
+    transform_listener_.waitForTransform("world", "gripper_l_base",
+                                         ros::Time(0), ros::Duration(1));
+    transform_listener_.lookupTransform("world", "gripper_l_base", ros::Time(0),
+                                        eef_pose);
 
-    transform_listener_.waitForTransform("world", "gripper_l_base", ros::Time(0), ros::Duration(1));
-    transform_listener_.lookupTransform("world", "gripper_l_base", ros::Time(0), eef_pose);
-    
-  } catch(tf::TransformException& ex) {
+  } catch (tf::TransformException& ex) {
     ROS_ERROR("%s", ex.what());
   }
 
@@ -877,9 +892,9 @@ bool DemoGrasping::startDemo(std_srvs::Empty::Request& req,
 
   hiqp_client_.removeAllTasks();
   hiqp_client_.resetHiQPController();
-//  ROS_INFO("Trying to put the manipulator in transfer configuration.");
+  //  ROS_INFO("Trying to put the manipulator in transfer configuration.");
 
-//  hiqp_client_.setJointAngles(sensing_config_);
+  //  hiqp_client_.setJointAngles(sensing_config_);
 
   ROS_INFO("DEMO FINISHED.");
 

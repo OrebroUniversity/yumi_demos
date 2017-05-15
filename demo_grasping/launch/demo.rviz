@@ -6,7 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /TF1/Frames1
+        - /RobotModel1
         - /TF1/Tree1
         - /MarkerArray2/Namespaces1
         - /MarkerArray3
@@ -30,7 +30,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: PointCloud2
 Visualization Manager:
   Class: ""
   Displays:
@@ -226,6 +226,8 @@ Visualization Manager:
           Value: true
         kinect2_rgb_optical_frame:
           Value: true
+        planned_grasp:
+          Value: true
         sdf_map_frame:
           Value: true
         world:
@@ -272,7 +274,8 @@ Visualization Manager:
       Tree:
         world:
           sdf_map_frame:
-            {}
+            planned_grasp:
+              {}
           yumi_body:
             camera_link:
               camera_depth_frame:
@@ -375,7 +378,7 @@ Visualization Manager:
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
-      Size (Pixels): 3
+      Size (Pixels): 15
       Size (m): 0.00999999978
       Style: Points
       Topic: /gplanner/fused_pc
@@ -383,36 +386,6 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
-    - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz/PointCloud2
-      Color: 255; 255; 255
-      Color Transformer: RGB8
-      Decay Time: 0
-      Enabled: false
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Max Intensity: 4096
-      Min Color: 0; 0; 0
-      Min Intensity: 0
-      Name: PointCloud2
-      Position Transformer: XYZ
-      Queue Size: 10
-      Selectable: true
-      Size (Pixels): 5
-      Size (m): 0.00999999978
-      Style: Points
-      Topic: /gplanner/fused_pc
-      Unreliable: false
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: false
     - Class: rviz/MarkerArray
       Enabled: false
       Marker Topic: /gplanner/constraint_marker
@@ -422,13 +395,13 @@ Visualization Manager:
       Queue Size: 100
       Value: false
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /yumi/gradient_marker
       Name: MarkerArray
       Namespaces:
         {}
       Queue Size: 100
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 200; 200; 200
@@ -453,7 +426,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 2.57798696
+      Distance: 1.19837832
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -467,10 +440,10 @@ Visualization Manager:
       Focal Shape Size: 0.0500000007
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.0797994807
+      Pitch: 0.234798819
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.287201524
+      Yaw: 0.44718641
     Saved: ~
 Window Geometry:
   Displays:

@@ -27,7 +27,6 @@ namespace demo_grasping {
 
 //#define PILE_GRASPING 1
 
-#define DYNAMICS_GAIN 0.5
 #define ALIGNMENT_ANGLE 0.05
 
 #define SAFETY_HEIGHT 0.34
@@ -103,6 +102,8 @@ class DemoGrasping {
   // bool task_success_;
   bool with_gazebo_;  ///<indicate whether the node is run in simulation
   // std::vector<unsigned int> pers_task_vis_ids_;
+
+  double DYNAMICS_GAIN;
 
   //**Grasp definition - this should be modified to grasp different objects */
   GraspInterval grasp_;
