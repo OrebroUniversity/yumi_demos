@@ -138,12 +138,12 @@ class DemoTeleop {
 		
 	    if(runOnline) {
 
+#if 0	
 		close_gripper_clt_ = n_.serviceClient<yumi_hw::YumiGrasp>("close_gripper");
 		close_gripper_clt_.waitForExistence();
 
 		open_gripper_clt_ = n_.serviceClient<yumi_hw::YumiGrasp>("open_gripper");
 		open_gripper_clt_.waitForExistence();
-#if 0	
 		reset_map_clt_ = n_.serviceClient<std_srvs::Empty>("reset_map");
 		reset_map_clt_.waitForExistence();
 
@@ -208,7 +208,7 @@ class DemoTeleop {
 	}
 
 	void grasp_left_callback(const std_msgs::Float32::ConstPtr& msg) {
-	   
+#if 0 
 	    if(msg->data > grasp_thresh+grasp_thresh_tol && !leftClosed) { 
 		yumi_hw::YumiGrasp gr;
 		gr.request.gripper_id =1;
@@ -239,11 +239,12 @@ class DemoTeleop {
 		sleep(1);
 		leftClosed = false;
 	    }
-
+#endif
 	}
 
 	void grasp_right_callback(const std_msgs::Float32::ConstPtr& msg) {
-	   
+
+#if 0	    
 	    if(msg->data > grasp_thresh+grasp_thresh_tol && !rightClosed) { 
 		yumi_hw::YumiGrasp gr;
 		gr.request.gripper_id =2;
@@ -274,6 +275,7 @@ class DemoTeleop {
 		sleep(1);
 		rightClosed = false;
 	    }
+#endif	    
 
 	}
 
@@ -873,6 +875,7 @@ class DemoTeleop {
 	    //-------------------------------------------------------------------------//
 	    //move to teleop joint configuration
 	    //-------------------------------------------------------------------------//
+#if 0
 	    {
 		//remove previous task
 
@@ -899,6 +902,7 @@ class DemoTeleop {
 		}
 		sleep(3);
 	    }
+#endif
 
 	    //-------------------------------------------------------------------------//
 	    {
@@ -1076,6 +1080,7 @@ class DemoTeleop {
 			ROS_BREAK();
 		    }
 		    sleep(3);
+#if 0
 		    //remove previous task
 		    hiqp_msgs::RemoveTask rtask;
 		    rtask.request.name = "teleop_init_config";
@@ -1084,6 +1089,7 @@ class DemoTeleop {
 			ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
 			ROS_BREAK();
 		    }
+#endif
 		}
 
 		ROS_INFO("waiting for sync...");

@@ -9,6 +9,10 @@
      <param name="translation_threshold" value="5.15"/>
      <param name="rotation_threshold" value="0.3"/>
      <param name="pose_freshness_threshold" value="0.5"/>
+     <param name="teleop_task_dynamics" value="0.8"/>
+     <param name="jnt_task_dynamics" value="0.5"/>
+     
+     <param name="run_online" value="false"/>
    
      <rosparam param="jnts_teleop_sensing">[ -0.4, -1.88, 0.61, 0.19, -0.84, 0.15, -2.12, 0.52, -1.94, -0.65, 0.28, 1.58, 0.18, -1.52]</rosparam>
      <rosparam param="jnts_teleop_init">[-0.84, -2.13, 1.47, 0.89, 1.15, 0.42, -3.0, 0.84, -2.13, -1.47, 0.89, -1.15, 0.42, 0.0]</rosparam>
