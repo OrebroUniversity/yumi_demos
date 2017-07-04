@@ -2,7 +2,7 @@
 <launch> 
 
 <!-- Launches a hardware interface to an online yumi. Load hiqp controller -->
-
+<arg name="rviz" default="false" doc="Set to true to enable rviz."/>
 <arg name="name" default="yumi" doc="The robot name. Ensure this is the same name you give to the arm in the urdf instance."/>
 <arg name="ip" default="192.168.125.1"/> <!--when talking to the real robot controller -->
 <arg name="port" default="49939"/> <!--when talking to the real robot controller -->
@@ -13,7 +13,7 @@
 <param name="robot_description" command="$(find xacro)/xacro.py '$(find yumi_description)/urdf/yumi.urdf.xacro' prefix:=$(arg hardware_interface)" />
 
 <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
-    <remap from="/joint_states" to="/yumi/joint_states" />
+  <remap from="/joint_states" to="/yumi/joint_states" />
 </node>
 
 <rosparam file="$(find yumi_hw)/config/egm_rws_config.yaml" command="load" ns="/yumi/yumi_hw"/>
@@ -35,9 +35,13 @@
     <param name="use_egm" value="true"/>
 </node>
  
+<node required="true" name="yumi_gripper" pkg="yumi_hw" type="yumi_gripper_node" respawn="false" ns="/yumi" output="screen"> <!--launch-prefix="xterm -e gdb - -args"-->
+  <!-- addresses /-->
+  <param name="ip" value="$(arg ip)"/>
+</node>
 
-  <!-- Run RViz for visualization instead of the Gazebo GUI -->
-  <!--node name="rviz" pkg="rviz" type="rviz" args="-d $(find hiqp_controllers)/launch/yumi.rviz"/-->
+<!-- Run RViz for visualization instead of the Gazebo GUI -->
+<node name="rviz" pkg="rviz" type="rviz" args="-d $(find demo_grasping)/launch/demo.rviz" if="$(arg rviz)"/>
 
 </launch>
 
