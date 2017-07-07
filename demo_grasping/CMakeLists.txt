@@ -21,6 +21,9 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(Boost REQUIRED)
 find_package(Eigen3 REQUIRED)
 
+set(GUROBI_LIB_DIR "$ENV{GUROBI_HOME}/lib")
+link_directories(${GUROBI_LIB_DIR})
+
 catkin_package(
   CATKIN_DEPENDS roscpp rosbag hiqp_ros controller_manager_msgs gazebo_msgs yumi_hw grasp_planner
   INCLUDE_DIRS include

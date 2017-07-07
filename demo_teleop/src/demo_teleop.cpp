@@ -1,9 +1,10 @@
 #include <ros/ros.h>
+
 #include <yumi_hw/YumiGrasp.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <hiqp_msgs/SetTask.h>
-#include <hiqp_msgs/RemoveTask.h>
-#include <hiqp_msgs/AddGeometricPrimitive.h>
+
+#include <hiqp_ros/hiqp_client.h>
+
 #include <std_msgs/Float32.h>
 #include <std_srvs/Empty.h>
 #include <visualization_msgs/MarkerArray.h>
@@ -33,9 +34,10 @@ class DemoTeleop {
 	ros::Publisher marker_viz_pub_;
 
 	///Clients to other nodes
-	ros::ServiceClient set_controller_task_;
-	ros::ServiceClient remove_controller_task_;
-	ros::ServiceClient add_controller_primitive_;
+	hiqp_ros::HiQPClient hiqp_client_;
+	//ros::ServiceClient set_controller_task_;
+	//ros::ServiceClient remove_controller_task_;
+	//ros::ServiceClient add_controller_primitive_;
 	
 	ros::ServiceClient close_gripper_clt_;
 	ros::ServiceClient open_gripper_clt_;
@@ -74,7 +76,7 @@ class DemoTeleop {
 	    return time.tv_sec + time.tv_usec * 1e-6; 
 	}
     public:
-	DemoTeleop() {
+	DemoTeleop(): hiqp_client_("yumi", "hiqp_joint_velocity_controller") {
 	    nh_ = ros::NodeHandle("~");
 	    n_ = ros::NodeHandle();
 	    
@@ -127,6 +129,7 @@ class DemoTeleop {
 	    regain_start=false;
 	    quit_demo=false;
 
+	    /*
 	    set_controller_task_ = n_.serviceClient<hiqp_msgs::SetTask>("set_task");
 	    set_controller_task_.waitForExistence();
 	
@@ -135,10 +138,9 @@ class DemoTeleop {
 	
 	    add_controller_primitive_ = n_.serviceClient<hiqp_msgs::AddGeometricPrimitive>("add_primitive");
 	    add_controller_primitive_.waitForExistence();
-		
-	    if(runOnline) {
+	    */
 
-#if 0	
+	    if(runOnline) {
 		close_gripper_clt_ = n_.serviceClient<yumi_hw::YumiGrasp>("close_gripper");
 		close_gripper_clt_.waitForExistence();
 
@@ -149,7 +151,6 @@ class DemoTeleop {
 
 		convert_and_publish_map_ = n_.serviceClient<std_srvs::Empty>("map_to_edt");
 		convert_and_publish_map_.waitForExistence();
-#endif
 	    }
 	}
 
@@ -391,31 +392,13 @@ class DemoTeleop {
 	    //-------------------------------------------------------------------------//
 	    //set joint configuration out of sensor view
 	    {
-		hiqp_msgs::SetTask task;
-		task.request.name = "teleop_sensing_config";
-		task.request.priority = 3;
-		task.request.visible = 1;
-		task.request.active = 1;
-		task.request.def_params.push_back("TDefFullPose");
-		for(int i=0; i<teleop_sensing.size(); ++i) {
-		    std::stringstream strm;
-		    strm<<teleop_sensing[i];
-		    task.request.def_params.push_back(strm.str());
-		}
-		task.request.dyn_params.push_back("TDynLinear");
-		std::stringstream strm;
-		strm<<jnt_task_dynamics;
-		task.request.dyn_params.push_back(strm.str());
-
-		if(!set_controller_task_.call(task))
+		if(!hiqp_client_.setJointAngles(teleop_sensing))
 		{
-		    ROS_ERROR("could not set task %s",task.request.name.c_str());
+		    ROS_ERROR("could not set task");
 		    ROS_BREAK();
 		}
-		sleep(10);
 	    }
 	    //wait to achieve
-#if 0
 	    //-------------------------------------------------------------------------//
 	    // reset map
 	    {
@@ -442,42 +425,15 @@ class DemoTeleop {
 		    }
 		}
 	    }
-#endif
 	    //-------------------------------------------------------------------------//
 	    //move to teleop joint configuration
 	    //-------------------------------------------------------------------------//
 	    {
-		//remove previous task
-		hiqp_msgs::RemoveTask rtask;
-		rtask.request.name = "teleop_sensing_config";
-		if(!remove_controller_task_.call(rtask))
+		if(!hiqp_client_.setJointAngles(teleop_init))
 		{
-		    ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
+		    ROS_ERROR("could not set task ");
 		    ROS_BREAK();
 		}
-
-		hiqp_msgs::SetTask task;
-		task.request.name = "teleop_init_config";
-		task.request.priority = 3;
-		task.request.visible = 1;
-		task.request.active = 1;
-		task.request.def_params.push_back("TDefFullPose");
-		for(int i=0; i<teleop_sensing.size(); ++i) {
-		    std::stringstream strm;
-		    strm<<teleop_init[i];
-		    task.request.def_params.push_back(strm.str());
-		}
-		task.request.dyn_params.push_back("TDynLinear");
-		std::stringstream strm;
-		strm<<jnt_task_dynamics;
-		task.request.dyn_params.push_back(strm.str());
-
-		if(!set_controller_task_.call(task))
-		{
-		    ROS_ERROR("could not set task %s",task.request.name.c_str());
-		    ROS_BREAK();
-		}
-		sleep(3);
 	    }
 
 	    //-------------------------------------------------------------------------//
@@ -486,104 +442,81 @@ class DemoTeleop {
 		double col[] = {0, 0, 0, 1};
 		double params[] = {0, 0, 0, 1, 0, 0, 0};
 		double params2[] = {0, 0, 0, 0, 0, 0};
+		std::vector<double> prim_color = std::vector<double>(col, col+sizeof(col)/sizeof(double));
+		std::vector<double> prim_params = std::vector<double>(params, params+sizeof(params)/sizeof(double));
+		std::vector<double> prim_params2 = std::vector<double>(params2, params2+sizeof(params2)/sizeof(double));
 		
-		hiqp_msgs::AddGeometricPrimitive prim;
-		prim.request.name = "teleop_left_frame";
-		prim.request.type = "frame";
-		prim.request.frame_id = "yumi_body";
-		prim.request.visible = true;
-		prim.request.color = std::vector<double>(col, col+sizeof(col)/sizeof(double));
-		prim.request.parameters= std::vector<double>(params, params+sizeof(params)/sizeof(double));
-
-		if(!add_controller_primitive_.call(prim))
+		if(!hiqp_client_.setPrimitive("teleop_left_frame","frame","yumi_body",true,prim_color,prim_params))
 		{
-		    ROS_ERROR("could not add primitive %s",prim.request.name.c_str());
+		    ROS_ERROR("could not add primitive");
 		    ROS_BREAK();
 		}
-		
-		prim.request.name = "teleop_right_frame";
-		prim.request.frame_id = "yumi_body";
-		if(!add_controller_primitive_.call(prim))
+		if(!hiqp_client_.setPrimitive("teleop_right_frame","frame","yumi_body",true,prim_color,prim_params))
 		{
-		    ROS_ERROR("could not add primitive %s",prim.request.name.c_str());
+		    ROS_ERROR("could not add primitive");
 		    ROS_BREAK();
 		}
-
-		prim.request.name = "teleop_gripper_left_frame";
-		prim.request.frame_id = "gripper_l_base";
-		if(!add_controller_primitive_.call(prim))
+		if(!hiqp_client_.setPrimitive("teleop_gripper_left_frame","frame","gripper_l_base",true,prim_color,prim_params))
 		{
-		    ROS_ERROR("could not add primitive %s",prim.request.name.c_str());
+		    ROS_ERROR("could not add primitive");
 		    ROS_BREAK();
 		}
-
-		prim.request.name = "teleop_gripper_right_frame";
-		prim.request.frame_id = "gripper_r_base";
-		if(!add_controller_primitive_.call(prim))
+		if(!hiqp_client_.setPrimitive("teleop_gripper_right_frame","frame","gripper_r_base",true,prim_color,prim_params))
 		{
-		    ROS_ERROR("could not add primitive %s",prim.request.name.c_str());
+		    ROS_ERROR("could not add primitive");
 		    ROS_BREAK();
 		}
 		
 		//Lines
-		hiqp_msgs::AddGeometricPrimitive prim2;
-		prim2.request.color = std::vector<double>(col, col+sizeof(col)/sizeof(double));
-		prim2.request.parameters= std::vector<double>(params2, params2+sizeof(params2)/sizeof(double));
+		hiqp_msgs::Primitive prim2;
+		prim2.color = std::vector<double>(col, col+sizeof(col)/sizeof(double));
+		prim2.parameters= std::vector<double>(params2, params2+sizeof(params2)/sizeof(double));
 
-		prim2.request.name = "object_vertical_axis";
-		prim2.request.type = "line";
-		prim2.request.frame_id = "yumi_body";
-		prim2.request.visible = false;
-		prim2.request.parameters[0] = 0;
-		prim2.request.parameters[1] = 0;
-		prim2.request.parameters[2] = 1;
-		prim2.request.parameters[3] = 0.45;
-		prim2.request.parameters[4] = 0;
-		prim2.request.parameters[5] = 0.1;
-		if(!add_controller_primitive_.call(prim2))
+		prim2.name = "object_vertical_axis";
+		prim2.type = "line";
+		prim2.frame_id = "yumi_body";
+		prim2.visible = false;
+		prim2.parameters[0] = 0;
+		prim2.parameters[1] = 0;
+		prim2.parameters[2] = 1;
+		prim2.parameters[3] = 0.45;
+		prim2.parameters[4] = 0;
+		prim2.parameters[5] = 0.1;
+		if(!hiqp_client_.setPrimitives({prim2}))
 		{
-		    ROS_ERROR("could not add primitive %s",prim2.request.name.c_str());
+		    ROS_ERROR("could not add primitive %s",prim2.name.c_str());
 		    ROS_BREAK();
 		}
 		
-		prim2.request.name = "gripper_approach_axis";
-		prim2.request.type = "line";
-		prim2.request.frame_id = "gripper_r_base";
-		prim2.request.visible = false;
-		prim2.request.parameters[0] = 0;
-		prim2.request.parameters[1] = 0;
-		prim2.request.parameters[2] = 1;
-		prim2.request.parameters[3] = 0;
-		prim2.request.parameters[4] = 0;
-		prim2.request.parameters[5] = 0;
-		if(!add_controller_primitive_.call(prim2))
+		prim2.name = "gripper_approach_axis";
+		prim2.type = "line";
+		prim2.frame_id = "gripper_r_base";
+		prim2.visible = false;
+		prim2.parameters[0] = 0;
+		prim2.parameters[1] = 0;
+		prim2.parameters[2] = 1;
+		prim2.parameters[3] = 0;
+		prim2.parameters[4] = 0;
+		prim2.parameters[5] = 0;
+		if(!hiqp_client_.setPrimitives({prim2}))
 		{
-		    ROS_ERROR("could not add prim2itive %s",prim2.request.name.c_str());
+		    ROS_ERROR("could not add prim2itive %s",prim2.name.c_str());
 		    ROS_BREAK();
 		}
 		
-		prim2.request.name = "gripper_vertical_axis";
-		prim2.request.type = "line";
-		prim2.request.frame_id = "gripper_r_base";
-		prim2.request.visible = false;
-		prim2.request.parameters[0] = 0;
-		prim2.request.parameters[1] = 1;
-		prim2.request.parameters[2] = 0;
-		prim2.request.parameters[3] = 0;
-		prim2.request.parameters[4] = 0;
-		prim2.request.parameters[5] = 0;
-		if(!add_controller_primitive_.call(prim2))
+		prim2.name = "gripper_vertical_axis";
+		prim2.type = "line";
+		prim2.frame_id = "gripper_r_base";
+		prim2.visible = false;
+		prim2.parameters[0] = 0;
+		prim2.parameters[1] = 1;
+		prim2.parameters[2] = 0;
+		prim2.parameters[3] = 0;
+		prim2.parameters[4] = 0;
+		prim2.parameters[5] = 0;
+		if(!hiqp_client_.setPrimitives({prim2}))
 		{
-		    ROS_ERROR("could not add prim2itive %s",prim2.request.name.c_str());
-		    ROS_BREAK();
-		}
-		
-		//remove previous task
-		hiqp_msgs::RemoveTask rtask;
-		rtask.request.name = "teleop_init_config";
-		if(!remove_controller_task_.call(rtask))
-		{
-		    ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
+		    ROS_ERROR("could not add prim2itive %s",prim2.name.c_str());
 		    ROS_BREAK();
 		}
 
@@ -591,93 +524,92 @@ class DemoTeleop {
 	    // enter teleop loop //
 	    //define tasks	
 	    std::stringstream strm;
-	    hiqp_msgs::RemoveTask rtask;
 	    
-	    hiqp_msgs::SetTask task_proj_left;
-	    task_proj_left.request.name = "teleop_left_frame";
-	    task_proj_left.request.priority = 2;
-	    task_proj_left.request.visible = 1;
-	    task_proj_left.request.active = 1;
-	    task_proj_left.request.def_params.push_back("TDefGeomProj");
-	    task_proj_left.request.def_params.push_back("frame");
-	    task_proj_left.request.def_params.push_back("frame");
-	    task_proj_left.request.def_params.push_back("teleop_left_frame = teleop_gripper_left_frame");
-	    task_proj_left.request.dyn_params.push_back("TDynLinear");
+	    hiqp_msgs::Task task_proj_left;
+	    task_proj_left.name = "teleop_left_frame";
+	    task_proj_left.priority = 2;
+	    task_proj_left.visible = 1;
+	    task_proj_left.active = 1;
+	    task_proj_left.def_params.push_back("TDefGeomProj");
+	    task_proj_left.def_params.push_back("frame");
+	    task_proj_left.def_params.push_back("frame");
+	    task_proj_left.def_params.push_back("teleop_left_frame = teleop_gripper_left_frame");
+	    task_proj_left.dyn_params.push_back("TDynLinear");
 	    strm<<teleop_task_dynamics;
-	    task_proj_left.request.dyn_params.push_back(strm.str());
+	    task_proj_left.dyn_params.push_back(strm.str());
 	   
 	    strm.clear(); 
-	    hiqp_msgs::SetTask task_proj_right;
-	    task_proj_right.request.name = "teleop_right_frame";
-	    task_proj_right.request.priority = 2;
-	    task_proj_right.request.visible = 1;
-	    task_proj_right.request.active = 1;
-	    task_proj_right.request.def_params.push_back("TDefGeomProj");
-	    task_proj_right.request.def_params.push_back("frame");
-	    task_proj_right.request.def_params.push_back("frame");
-	    task_proj_right.request.def_params.push_back("teleop_right_frame = teleop_gripper_right_frame");
-	    task_proj_right.request.dyn_params.push_back("TDynLinear");
+	    hiqp_msgs::Task task_proj_right;
+	    task_proj_right.name = "teleop_right_frame";
+	    task_proj_right.priority = 2;
+	    task_proj_right.visible = 1;
+	    task_proj_right.active = 1;
+	    task_proj_right.def_params.push_back("TDefGeomProj");
+	    task_proj_right.def_params.push_back("frame");
+	    task_proj_right.def_params.push_back("frame");
+	    task_proj_right.def_params.push_back("teleop_right_frame = teleop_gripper_right_frame");
+	    task_proj_right.dyn_params.push_back("TDynLinear");
 	    strm<<teleop_task_dynamics;
-	    task_proj_right.request.dyn_params.push_back(strm.str());
+	    task_proj_right.dyn_params.push_back(strm.str());
 
 	    strm.clear(); 
-	    hiqp_msgs::SetTask task_align_left;
-	    task_align_left.request.name = "teleop_left_align";
-	    task_align_left.request.priority = 3;
-	    task_align_left.request.visible = 1;
-	    task_align_left.request.active = 1;
-	    task_align_left.request.def_params.push_back("TDefGeomAlign");
-	    task_align_left.request.def_params.push_back("frame");
-	    task_align_left.request.def_params.push_back("frame");
-	    task_align_left.request.def_params.push_back("teleop_left_frame = teleop_gripper_left_frame");
-	    task_align_left.request.def_params.push_back("0");
-	    task_align_left.request.dyn_params.push_back("TDynLinear");
+	    hiqp_msgs::Task task_align_left;
+	    task_align_left.name = "teleop_left_align";
+	    task_align_left.priority = 3;
+	    task_align_left.visible = 1;
+	    task_align_left.active = 1;
+	    task_align_left.def_params.push_back("TDefGeomAlign");
+	    task_align_left.def_params.push_back("frame");
+	    task_align_left.def_params.push_back("frame");
+	    task_align_left.def_params.push_back("teleop_left_frame = teleop_gripper_left_frame");
+	    task_align_left.def_params.push_back("0");
+	    task_align_left.dyn_params.push_back("TDynLinear");
 	    strm<<jnt_task_dynamics; //FIXME ?
-	    task_align_left.request.dyn_params.push_back(strm.str());
+	    task_align_left.dyn_params.push_back(strm.str());
 
 	    strm.clear(); 
-	    hiqp_msgs::SetTask task_align_right;
-	    task_align_right.request.name = "teleop_right_align";
-	    task_align_right.request.priority = 3;
-	    task_align_right.request.visible = 1;
-	    task_align_right.request.active = 1;
-	    task_align_right.request.def_params.push_back("TDefGeomAlign");
-	    task_align_right.request.def_params.push_back("frame");
-	    task_align_right.request.def_params.push_back("frame");
-	    task_align_right.request.def_params.push_back("teleop_right_frame = teleop_gripper_right_frame");
-	    task_align_right.request.def_params.push_back("0");
-	    task_align_right.request.dyn_params.push_back("TDynLinear");
+	    hiqp_msgs::Task task_align_right;
+	    task_align_right.name = "teleop_right_align";
+	    task_align_right.priority = 3;
+	    task_align_right.visible = 1;
+	    task_align_right.active = 1;
+	    task_align_right.def_params.push_back("TDefGeomAlign");
+	    task_align_right.def_params.push_back("frame");
+	    task_align_right.def_params.push_back("frame");
+	    task_align_right.def_params.push_back("teleop_right_frame = teleop_gripper_right_frame");
+	    task_align_right.def_params.push_back("0");
+	    task_align_right.dyn_params.push_back("TDynLinear");
 	    strm<<jnt_task_dynamics; //FIXME ?
-	    task_align_right.request.dyn_params.push_back(strm.str());
+	    task_align_right.dyn_params.push_back(strm.str());
 
 	    strm.clear(); 
-	    hiqp_msgs::SetTask task_auto_align_vertical_right;
-	    task_auto_align_vertical_right.request.name = "gripper_right_align";
-	    task_auto_align_vertical_right.request.priority = 3;
-	    task_auto_align_vertical_right.request.visible = 1;
-	    task_auto_align_vertical_right.request.active = 1;
-	    task_auto_align_vertical_right.request.def_params.push_back("TDefGeomAlign");
-	    task_auto_align_vertical_right.request.def_params.push_back("line");
-	    task_auto_align_vertical_right.request.def_params.push_back("line");
-	    task_auto_align_vertical_right.request.def_params.push_back("object_vertical_axis = gripper_vertical_axis");
-	    task_auto_align_vertical_right.request.def_params.push_back("0");
-	    task_auto_align_vertical_right.request.dyn_params.push_back("TDynLinear");
+	    hiqp_msgs::Task task_auto_align_vertical_right;
+	    task_auto_align_vertical_right.name = "gripper_right_align";
+	    task_auto_align_vertical_right.priority = 3;
+	    task_auto_align_vertical_right.visible = 1;
+	    task_auto_align_vertical_right.active = 1;
+	    task_auto_align_vertical_right.def_params.push_back("TDefGeomAlign");
+	    task_auto_align_vertical_right.def_params.push_back("line");
+	    task_auto_align_vertical_right.def_params.push_back("line");
+	    task_auto_align_vertical_right.def_params.push_back("object_vertical_axis = gripper_vertical_axis");
+	    task_auto_align_vertical_right.def_params.push_back("0");
+	    task_auto_align_vertical_right.dyn_params.push_back("TDynLinear");
 	    strm<<jnt_task_dynamics; //FIXME ?
-	    task_auto_align_vertical_right.request.dyn_params.push_back(strm.str());
+	    task_auto_align_vertical_right.dyn_params.push_back(strm.str());
 	    
 	    strm.clear(); 
-	    hiqp_msgs::SetTask task_auto_align_approach_right;
-	    task_auto_align_approach_right.request.name = "gripper_right_approach";
-	    task_auto_align_approach_right.request.priority = 3;
-	    task_auto_align_approach_right.request.visible = 1;
-	    task_auto_align_approach_right.request.active = 1;
-	    task_auto_align_approach_right.request.def_params.push_back("TDefGeomProj");
-	    task_auto_align_approach_right.request.def_params.push_back("line");
-	    task_auto_align_approach_right.request.def_params.push_back("line");
-	    task_auto_align_approach_right.request.def_params.push_back("gripper_approach_axis = object_vertical_axis");
-	    task_auto_align_approach_right.request.dyn_params.push_back("TDynLinear");
+	    hiqp_msgs::Task task_auto_align_approach_right;
+	    task_auto_align_approach_right.name = "gripper_right_approach";
+	    task_auto_align_approach_right.priority = 3;
+	    task_auto_align_approach_right.visible = 1;
+	    task_auto_align_approach_right.active = 1;
+	    task_auto_align_approach_right.def_params.push_back("TDefGeomProj");
+	    task_auto_align_approach_right.def_params.push_back("line");
+	    task_auto_align_approach_right.def_params.push_back("line");
+	    task_auto_align_approach_right.def_params.push_back("gripper_approach_axis = object_vertical_axis");
+	    task_auto_align_approach_right.dyn_params.push_back("TDynLinear");
 	    strm<<jnt_task_dynamics; //FIXME ?
-	    task_auto_align_approach_right.request.dyn_params.push_back(strm.str());
+	    task_auto_align_approach_right.dyn_params.push_back(strm.str());
 
 	    bools_mutex.lock();
 	    bool quit = quit_demo;
@@ -690,36 +622,12 @@ class DemoTeleop {
 		bool check_alignment = align_on;
 		regain_start = false;
 		bools_mutex.unlock();
+		
 		if(restart) {
 		    ROS_INFO("Setting initial pose again");
-		    hiqp_msgs::SetTask task;
-		    task.request.name = "teleop_init_config";
-		    task.request.priority = 3;
-		    task.request.visible = 1;
-		    task.request.active = 1;
-		    task.request.def_params.push_back("TDefFullPose");
-		    for(int i=0; i<teleop_sensing.size(); ++i) {
-			std::stringstream strm;
-			strm<<teleop_init[i];
-			task.request.def_params.push_back(strm.str());
-		    }
-		    task.request.dyn_params.push_back("TDynLinear");
-		    std::stringstream strm;
-		    strm<<jnt_task_dynamics;
-		    task.request.dyn_params.push_back(strm.str());
-
-		    if(!set_controller_task_.call(task))
+		    if(!hiqp_client_.setJointAngles(teleop_init))
 		    {
-			ROS_ERROR("could not set task %s",task.request.name.c_str());
-			ROS_BREAK();
-		    }
-		    sleep(3);
-		    //remove previous task
-		    hiqp_msgs::RemoveTask rtask;
-		    rtask.request.name = "teleop_init_config";
-		    if(!remove_controller_task_.call(rtask))
-		    {
-			ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
+			ROS_ERROR("could not set task");
 			ROS_BREAK();
 		    }
 		}
@@ -731,51 +639,22 @@ class DemoTeleop {
 		    bools_mutex.unlock();
 		    continue; 
 		}
+		
+		
 		//-------------------------------------------------------------------------//
 		//synced, enable task
 		ROS_INFO("Synced, enabling teleop task");
-		task_proj_left.request.active = 1;
-		if(!set_controller_task_.call(task_proj_left))
-		{
-		    ROS_ERROR("could not set task %s",task_proj_left.request.name.c_str());
-		    ROS_BREAK();
-		}
+		task_proj_left.active = 1;
+		task_proj_right.active = 1;
+		task_align_left.active = 1;
 		
-		task_proj_right.request.active = 1;
-		if(!set_controller_task_.call(task_proj_right))
-		{
-		    ROS_ERROR("could not set task %s",task_proj_right.request.name.c_str());
-		    ROS_BREAK();
-		}
-/*
-*/		
-		task_align_left.request.active = 1;
-		if(!set_controller_task_.call(task_align_left))
-		{
-		    ROS_ERROR("could not set task %s",task_align_left.request.name.c_str());
-		    ROS_BREAK();
-		}
 		if(check_alignment) {
-		    task_align_right.request.active = 1;
-		    if(!set_controller_task_.call(task_align_right))
-		    {
-			ROS_ERROR("could not set task %s",task_align_right.request.name.c_str());
-			ROS_BREAK();
-		    }
+		    task_align_right.active = 1;
+		    hiqp_client_.setTasks({task_proj_left,task_proj_right,task_align_left,task_align_right});
 		} else {
-		    task_auto_align_vertical_right.request.active = 1;
-		    if(!set_controller_task_.call(task_auto_align_vertical_right))
-		    {
-			ROS_ERROR("could not set task %s",task_auto_align_vertical_right.request.name.c_str());
-			ROS_BREAK();
-		    }
-		    task_auto_align_approach_right.request.active = 1;
-		    if(!set_controller_task_.call(task_auto_align_approach_right))
-		    {
-			ROS_ERROR("could not set task %s",task_auto_align_approach_right.request.name.c_str());
-			ROS_BREAK();
-		    }
-
+		    task_auto_align_vertical_right.active = 1;
+		    task_auto_align_approach_right.active = 1;
+		    hiqp_client_.setTasks({task_proj_left,task_proj_right,task_align_left,task_auto_align_vertical_right,task_auto_align_approach_right});
 		}
 		/*
 		*/
@@ -792,46 +671,11 @@ class DemoTeleop {
 		
 		//-------------------------------------------------------------------------//
 		//disable task
-		rtask.request.name = "teleop_left_frame";
-		if(!remove_controller_task_.call(rtask))
-		{
-		    ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
-		    ROS_BREAK();
-		}
-		rtask.request.name = "teleop_right_frame";
-		if(!remove_controller_task_.call(rtask))
-		{
-		    ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
-		    ROS_BREAK();
-		}
-
-		rtask.request.name = "teleop_left_align";
-		if(!remove_controller_task_.call(rtask))
-		{
-		    ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
-		    ROS_BREAK();
-		}
 		if(check_alignment) {
-		    rtask.request.name = "teleop_right_align";
-		    if(!remove_controller_task_.call(rtask))
-		    {
-			ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
-			ROS_BREAK();
-		    }
+		    hiqp_client_.removeTasks({task_proj_left.name,task_proj_right.name,task_align_left.name,task_align_right.name});
 		} else {
-		    rtask.request.name = "gripper_right_align";
-		    if(!remove_controller_task_.call(rtask))
-		    {
-			ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
-			ROS_BREAK();
-		    }
-		    rtask.request.name = "gripper_right_approach";
-		    if(!remove_controller_task_.call(rtask))
-		    {
-			ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
-			ROS_BREAK();
-		    }
-
+		    hiqp_client_.removeTasks({task_proj_left.name,task_proj_right.name,task_align_left.name,
+			    task_auto_align_vertical_right.name,task_auto_align_approach_right.name});
 		}
 
 		/*
@@ -902,7 +746,6 @@ class DemoTeleop {
 		}
 		sleep(3);
 	    }
-#endif
 
 	    //-------------------------------------------------------------------------//
 	    {
@@ -1003,46 +846,46 @@ class DemoTeleop {
 	    
 	    strm.clear(); 
 	    hiqp_msgs::SetTask task_proj_right;
-	    task_proj_right.request.name = "teleop_right_frame";
-	    task_proj_right.request.priority = 2;
-	    task_proj_right.request.visible = 1;
-	    task_proj_right.request.active = 1;
-	    task_proj_right.request.def_params.push_back("TDefGeomProj");
-	    task_proj_right.request.def_params.push_back("frame");
-	    task_proj_right.request.def_params.push_back("frame");
-	    task_proj_right.request.def_params.push_back("teleop_right_frame = teleop_gripper_right_frame");
-	    task_proj_right.request.dyn_params.push_back("TDynLinear");
+	    task_proj_right.name = "teleop_right_frame";
+	    task_proj_right.priority = 2;
+	    task_proj_right.visible = 1;
+	    task_proj_right.active = 1;
+	    task_proj_right.def_params.push_back("TDefGeomProj");
+	    task_proj_right.def_params.push_back("frame");
+	    task_proj_right.def_params.push_back("frame");
+	    task_proj_right.def_params.push_back("teleop_right_frame = teleop_gripper_right_frame");
+	    task_proj_right.dyn_params.push_back("TDynLinear");
 	    strm<<teleop_task_dynamics;
-	    task_proj_right.request.dyn_params.push_back(strm.str());
+	    task_proj_right.dyn_params.push_back(strm.str());
 
 	    strm.clear(); 
 	    hiqp_msgs::SetTask task_auto_align_vertical_right;
-	    task_auto_align_vertical_right.request.name = "gripper_right_align";
-	    task_auto_align_vertical_right.request.priority = 3;
-	    task_auto_align_vertical_right.request.visible = 1;
-	    task_auto_align_vertical_right.request.active = 1;
-	    task_auto_align_vertical_right.request.def_params.push_back("TDefGeomAlign");
-	    task_auto_align_vertical_right.request.def_params.push_back("line");
-	    task_auto_align_vertical_right.request.def_params.push_back("line");
-	    task_auto_align_vertical_right.request.def_params.push_back("object_vertical_axis = gripper_vertical_axis");
-	    task_auto_align_vertical_right.request.def_params.push_back("0");
-	    task_auto_align_vertical_right.request.dyn_params.push_back("TDynLinear");
+	    task_auto_align_vertical_right.name = "gripper_right_align";
+	    task_auto_align_vertical_right.priority = 3;
+	    task_auto_align_vertical_right.visible = 1;
+	    task_auto_align_vertical_right.active = 1;
+	    task_auto_align_vertical_right.def_params.push_back("TDefGeomAlign");
+	    task_auto_align_vertical_right.def_params.push_back("line");
+	    task_auto_align_vertical_right.def_params.push_back("line");
+	    task_auto_align_vertical_right.def_params.push_back("object_vertical_axis = gripper_vertical_axis");
+	    task_auto_align_vertical_right.def_params.push_back("0");
+	    task_auto_align_vertical_right.dyn_params.push_back("TDynLinear");
 	    strm<<jnt_task_dynamics; //FIXME ?
-	    task_auto_align_vertical_right.request.dyn_params.push_back(strm.str());
+	    task_auto_align_vertical_right.dyn_params.push_back(strm.str());
 	    
 	    strm.clear(); 
 	    hiqp_msgs::SetTask task_auto_align_approach_right;
-	    task_auto_align_approach_right.request.name = "gripper_right_approach";
-	    task_auto_align_approach_right.request.priority = 3;
-	    task_auto_align_approach_right.request.visible = 1;
-	    task_auto_align_approach_right.request.active = 1;
-	    task_auto_align_approach_right.request.def_params.push_back("TDefGeomProj");
-	    task_auto_align_approach_right.request.def_params.push_back("line");
-	    task_auto_align_approach_right.request.def_params.push_back("line");
-	    task_auto_align_approach_right.request.def_params.push_back("gripper_approach_axis = object_vertical_axis");
-	    task_auto_align_approach_right.request.dyn_params.push_back("TDynLinear");
+	    task_auto_align_approach_right.name = "gripper_right_approach";
+	    task_auto_align_approach_right.priority = 3;
+	    task_auto_align_approach_right.visible = 1;
+	    task_auto_align_approach_right.active = 1;
+	    task_auto_align_approach_right.def_params.push_back("TDefGeomProj");
+	    task_auto_align_approach_right.def_params.push_back("line");
+	    task_auto_align_approach_right.def_params.push_back("line");
+	    task_auto_align_approach_right.def_params.push_back("gripper_approach_axis = object_vertical_axis");
+	    task_auto_align_approach_right.dyn_params.push_back("TDynLinear");
 	    strm<<jnt_task_dynamics; //FIXME ?
-	    task_auto_align_approach_right.request.dyn_params.push_back(strm.str());
+	    task_auto_align_approach_right.dyn_params.push_back(strm.str());
 
 	    bools_mutex.lock();
 	    bool quit = quit_demo;
@@ -1058,12 +901,12 @@ class DemoTeleop {
 		bools_mutex.unlock();
 		if(restart) {
 		    ROS_INFO("Setting initial pose again");
-		    hiqp_msgs::SetTask task;
-		    task.request.name = "teleop_init_config";
-		    task.request.priority = 3;
-		    task.request.visible = 1;
-		    task.request.active = 1;
-		    task.request.def_params.push_back("TDefFullPose");
+		    hiqp_msgs::Task task;
+		    task.name = "teleop_init_config";
+		    task.priority = 3;
+		    task.visible = 1;
+		    task.active = 1;
+		    task.def_params.push_back("TDefFullPose");
 		    for(int i=0; i<teleop_sensing.size(); ++i) {
 			std::stringstream strm;
 			strm<<teleop_init[i];
@@ -1080,16 +923,6 @@ class DemoTeleop {
 			ROS_BREAK();
 		    }
 		    sleep(3);
-#if 0
-		    //remove previous task
-		    hiqp_msgs::RemoveTask rtask;
-		    rtask.request.name = "teleop_init_config";
-		    if(!remove_controller_task_.call(rtask))
-		    {
-			ROS_ERROR("could not remove task %s",rtask.request.name.c_str());
-			ROS_BREAK();
-		    }
-#endif
 		}
 
 		ROS_INFO("waiting for sync...");
@@ -1163,7 +996,7 @@ class DemoTeleop {
 	    }
 
 	    return true;
-	    return true;
+#endif
 	}
 
 

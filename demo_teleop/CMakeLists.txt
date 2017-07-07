@@ -1,12 +1,16 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(demo_teleop)
 
+set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_CXX_FLAGS "-std=c++11")
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   leap_motion
   roscpp
+  hiqp_ros 
   yumi_hw
   std_srvs
   std_msgs
@@ -15,6 +19,9 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(Boost REQUIRED COMPONENTS thread)
 find_package(Eigen REQUIRED)    
+
+set(GUROBI_LIB_DIR "$ENV{GUROBI_HOME}/lib")
+link_directories(${GUROBI_LIB_DIR})
 
 add_definitions(${EIGEN_DEFINITIONS})
 
