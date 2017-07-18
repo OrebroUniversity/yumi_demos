@@ -11,7 +11,6 @@ find_package(catkin REQUIRED COMPONENTS
   leap_motion
   roscpp
   hiqp_ros 
-  yumi_hw
   std_srvs
   std_msgs
   hiqp_msgs tf tf_conversions eigen_conversions geometry_msgs cmake_modules visualization_msgs
@@ -117,7 +116,7 @@ add_definitions(${EIGEN_DEFINITIONS})
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES demo_teleop
-  CATKIN_DEPENDS hiqp_ros leap_motion roscpp yumi_hw hiqp_msgs tf tf_conversions eigen_conversions geometry_msgs std_srvs std_msgs visualization_msgs
+  CATKIN_DEPENDS hiqp_ros leap_motion roscpp hiqp_msgs tf tf_conversions eigen_conversions geometry_msgs std_srvs std_msgs visualization_msgs
 #  DEPENDS system_lib
 )
 

@@ -49,11 +49,13 @@ DemoTeleop::DemoTeleop(): hiqp_client_("yumi", "hiqp_joint_velocity_controller")
     loadTasksFromParamServer();
 
     if(runOnline) {
+#if 0
 	close_gripper_clt_ = n_.serviceClient<yumi_hw::YumiGrasp>("close_gripper");
 	close_gripper_clt_.waitForExistence();
 
 	open_gripper_clt_ = n_.serviceClient<yumi_hw::YumiGrasp>("open_gripper");
 	open_gripper_clt_.waitForExistence();
+#endif
 
 	reset_map_clt_ = n_.serviceClient<std_srvs::Empty>("reset_map");
 	reset_map_clt_.waitForExistence();

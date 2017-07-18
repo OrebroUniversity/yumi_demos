@@ -3,7 +3,6 @@
 
 #include <ros/ros.h>
 
-#include <yumi_hw/YumiGrasp.h>
 #include <geometry_msgs/PoseStamped.h>
 
 #include <hiqp_ros/hiqp_client.h>
