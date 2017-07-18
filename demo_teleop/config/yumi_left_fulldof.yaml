@@ -1,0 +1,23 @@
+teleop_geometric_primitives:
+#####     PRIMITIVES    #####
+ - name: teleop_gripper_left_frame
+   type: frame 
+   frame_id: gripper_l_base
+   visible: true
+   color: [0.0, 0.5, 0.0, 1.0]
+   parameters: [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
+
+#####     TASKS    #####
+teleop_tasks:
+ - name: teleop_left_project
+   priority: 2
+   visible: true
+   active: true
+   def_params: ['TDefGeomProj', 'frame', 'frame', 'teleop_left_frame = teleop_gripper_left_frame']
+   dyn_params: ['TDynLinear', '5.0']
+ - name: teleop_left_align
+   priority: 3
+   visible: true
+   active: true
+   def_params: ['TDefGeomAlign', 'frame', 'frame', 'teleop_left_frame = teleop_gripper_left_frame', '0']
+   dyn_params: ['TDynLinear', '8.0']

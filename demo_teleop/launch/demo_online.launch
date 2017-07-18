@@ -1,6 +1,14 @@
 <?xml version="1.0"?>
 <launch> 
   <param name="use_sim_time" type="bool" value="false"/>
+  
+  <!-- load workspace constraints -->
+  <rosparam file="$(find hiqp_demos)/config/yumi_preload.yaml" command="load"/>
+  
+  <include file="$(find hiqp_demos)/launch/yumi_online.launch">
+    <arg name="debug" value="false"/>
+    <arg name="rviz" value="false"/>
+  </include>
 
   <node name="demo_teleop" pkg="demo_teleop" type="demo_teleop_node" respawn="false" output="screen" >
      <param name="frame_left" type="string" value="gripper_l_base"/>

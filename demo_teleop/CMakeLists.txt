@@ -115,7 +115,7 @@ add_definitions(${EIGEN_DEFINITIONS})
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
+  INCLUDE_DIRS include
 #  LIBRARIES demo_teleop
   CATKIN_DEPENDS hiqp_ros leap_motion roscpp yumi_hw hiqp_msgs tf tf_conversions eigen_conversions geometry_msgs std_srvs std_msgs visualization_msgs
 #  DEPENDS system_lib
@@ -129,7 +129,7 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
-  ${catkin_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS}
+  include ${catkin_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
