@@ -8,7 +8,7 @@
 
 #include<demo_teleop/demo_teleop.h>
 
-DemoTeleop::DemoTeleop(): hiqp_client_("yumi", "hiqp_joint_velocity_controller") {
+DemoTeleop::DemoTeleop() {
     
     nh_ = ros::NodeHandle("~");
     n_ = ros::NodeHandle();
@@ -39,6 +39,11 @@ DemoTeleop::DemoTeleop(): hiqp_client_("yumi", "hiqp_joint_velocity_controller")
     start_demo_ = nh_.advertiseService("start_demo", &DemoTeleop::start_demo_callback, this);
     regain_start_pose_ = nh_.advertiseService("regain_start", &DemoTeleop::regain_start_callback, this);
     quit_demo_ = nh_.advertiseService("quit_demo", &DemoTeleop::quit_demo_callback, this);
+   
+    std::string robot_namespace; 
+    nh_.param<std::string>("robot_namespace",robot_namespace,"yumi");
+    hiqp_client_ = std::shared_ptr<hiqp_ros::HiQPClient> (
+	    new hiqp_ros::HiQPClient(robot_namespace, "hiqp_joint_velocity_controller"));
 
     //these should probably be read from joint states
     leftClosed = false;
@@ -163,7 +168,7 @@ bool DemoTeleop::start_demo_callback(std_srvs::Empty::Request  &req,
     //-------------------------------------------------------------------------//
     //set joint configuration out of sensor view
     {
-	if(!hiqp_client_.setJointAngles(teleop_sensing))
+	if(!hiqp_client_->setJointAngles(teleop_sensing))
 	{
 	    ROS_ERROR("could not set task");
 	    ROS_BREAK();
@@ -200,7 +205,7 @@ bool DemoTeleop::start_demo_callback(std_srvs::Empty::Request  &req,
     //move to teleop joint configuration
     //-------------------------------------------------------------------------//
     {
-	if(!hiqp_client_.setJointAngles(teleop_init))
+	if(!hiqp_client_->setJointAngles(teleop_init))
 	{
 	    ROS_ERROR("could not set task ");
 	    ROS_BREAK();
@@ -209,7 +214,7 @@ bool DemoTeleop::start_demo_callback(std_srvs::Empty::Request  &req,
     }
 
     //-------------------------------------------------------------------------//
-    hiqp_client_.setTasks(teleop_tasks);
+    hiqp_client_->setTasks(teleop_tasks);
 
 
     return true;
@@ -219,21 +224,21 @@ bool DemoTeleop::regain_start_callback(std_srvs::Empty::Request  &req,
 	std_srvs::Empty::Response &res ) {
 
     ROS_INFO("Setting initial pose again");
-    hiqp_client_.removeTasks(teleop_task_names);
-    if(!hiqp_client_.setJointAngles(teleop_init))
+    hiqp_client_->removeTasks(teleop_task_names);
+    if(!hiqp_client_->setJointAngles(teleop_init))
     {
 	ROS_ERROR("could not set task");
 	ROS_BREAK();
     }
     sleep(2);
-    hiqp_client_.setTasks(teleop_tasks);
+    hiqp_client_->setTasks(teleop_tasks);
     return true;
 }
 
 bool DemoTeleop::quit_demo_callback(std_srvs::Empty::Request  &req,
 	std_srvs::Empty::Response &res ) {
 
-    hiqp_client_.removeTasks(teleop_task_names);
+    hiqp_client_->removeTasks(teleop_task_names);
     return true;
 }
 
@@ -274,7 +279,7 @@ void DemoTeleop::loadGeometricPrimitivesFromParamServer() {
 		    parameters.push_back(static_cast<double>(parameters_xml[j]));
 		}
 
-		hiqp_client_.setPrimitive(name, type, frame_id, visible, color, parameters);
+		hiqp_client_->setPrimitive(name, type, frame_id, visible, color, parameters);
 	    } catch (const XmlRpc::XmlRpcException& e) {
 		ROS_WARN_STREAM(
 			"Error while loading "

@@ -28,7 +28,7 @@ class DemoTeleop {
 	ros::Publisher marker_viz_pub_;
 
 	///Clients to other nodes
-	hiqp_ros::HiQPClient hiqp_client_;
+	std::shared_ptr<hiqp_ros::HiQPClient> hiqp_client_;
 	
 	ros::ServiceClient close_gripper_clt_;
 	ros::ServiceClient open_gripper_clt_;
