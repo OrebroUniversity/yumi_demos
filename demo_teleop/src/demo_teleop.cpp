@@ -168,7 +168,7 @@ bool DemoTeleop::start_demo_callback(std_srvs::Empty::Request  &req,
     //-------------------------------------------------------------------------//
     //set joint configuration out of sensor view
     {
-	if(!hiqp_client_->setJointAngles(teleop_sensing))
+	if(!hiqp_client_->setJointAngles(teleop_sensing, true, 2.5e-2))
 	{
 	    ROS_ERROR("could not set task");
 	    ROS_BREAK();
@@ -205,7 +205,7 @@ bool DemoTeleop::start_demo_callback(std_srvs::Empty::Request  &req,
     //move to teleop joint configuration
     //-------------------------------------------------------------------------//
     {
-	if(!hiqp_client_->setJointAngles(teleop_init))
+	if(!hiqp_client_->setJointAngles(teleop_init, true, 2.5e-2))
 	{
 	    ROS_ERROR("could not set task ");
 	    ROS_BREAK();
@@ -225,7 +225,7 @@ bool DemoTeleop::regain_start_callback(std_srvs::Empty::Request  &req,
 
     ROS_INFO("Setting initial pose again");
     hiqp_client_->removeTasks(teleop_task_names);
-    if(!hiqp_client_->setJointAngles(teleop_init))
+    if(!hiqp_client_->setJointAngles(teleop_init, true, 2.5e-2))
     {
 	ROS_ERROR("could not set task");
 	ROS_BREAK();
