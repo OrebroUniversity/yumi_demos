@@ -14,10 +14,10 @@ teleop_tasks:
    visible: true
    active: true
    def_params: ['TDefGeomProj', 'frame', 'frame', 'teleop_left_frame = teleop_gripper_left_frame']
-   dyn_params: ['TDynLinear', '1.8']
+   dyn_params: ['TDynLinear', '0.8']
  - name: teleop_left_align
    priority: 3
    visible: true
    active: true
    def_params: ['TDefGeomAlign', 'frame', 'frame', 'teleop_left_frame = teleop_gripper_left_frame', '0']
-   dyn_params: ['TDynLinear', '2.0']
+   dyn_params: ['TDynLinear', '1.0']
