@@ -9,7 +9,7 @@
   <arg name="tf_prefix" default="" />
 
   <param name="/camera/driver/use_device_time"              value="false" />
-  <param name="/camera/driver/data_skip"              value="8" />
+  <param name="/camera/driver/data_skip"              value="0" />
   <param name="/camera/driver/depth_registration"              value="true" />
   <arg name="pi/2" value="1.5707963267948966" />
   <arg name="pi" value="3.141592654" />
@@ -24,10 +24,20 @@
   <node pkg="tf" type="static_transform_publisher" name="$(arg camera)_base_link3"
     args="$(arg optical_rotate) $(arg tf_prefix)/$(arg camera)_rgb_frame $(arg tf_prefix)/$(arg camera)_rgb_optical_frame 100" />
 
+   <param name="k_robot_description" command="$(find xacro)/xacro '$(find yumi_demo_launch)/urdf/kinect_mount.urdf.xacro'" />
 
-  <node pkg="tf" type="static_transform_publisher" name="asus_calib_link"
-        args="0.355 0.015 1.26 0.0 1.578 -0.45 /yumi_body /camera_link 50" /> <!--hand calibrated --> 
-  
+    <node name="k_joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" >
+	<param name="use_gui" value="true"/>
+	<remap from="joint_states" to="/kinect_bot/joint_states" />
+	<remap from="robot_description" to="k_robot_description" />
+    </node>
+
+    <node name="k_robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" >
+	<remap from="robot_description" to="k_robot_description" />
+	<remap from="joint_states" to="/kinect_bot/joint_states" />
+    </node>
+
+
   <include file="$(find openni2_launch)/launch/openni2.launch">
       <arg name="publish_tf" value="false" />
       <arg name="device_id" value="1@1" />

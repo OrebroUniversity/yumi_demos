@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro"
+       name="kinect_bot" >
+
+    <xacro:include filename="$(find yumi_demo_launch)/urdf/kinect_mount.xacro" />
+    <xacro:kinect_cal parent_link="yumi_body" child_link="camera_link"/>
+
+    <link name="camera_link" />
+    <link name="yumi_body" />
+
+</robot>
+
