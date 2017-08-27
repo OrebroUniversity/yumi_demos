@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!-- Run the experiment node -->
+  <node name="exp_node" pkg="balancing_grasping" type="balancing_exp_node" respawn="false" output="screen" >
+     <param name="frame_left" type="string" value="grasp_link"/>
+     <param name="log_directory" value="$(find balancing_grasping)/log"/>
+     <param name="robot_namespace" value="yumi"/>
+  </node>
+
+
+  <!--  Hardware interfaces and controllers -->
+  <arg name="controllers" default="joint_state_controller hiqp_joint_velocity_controller"/>
+  <arg name="gripper_controllers" default="gripper_effort_pos_controller_r gripper_effort_pos_controller_l"/>
+  <arg name="arms_hardware_interface" default="VelocityJointInterface"/>
+  <arg name="grippers_hardware_interface" default="EffortJointInterface"/>
+
+
+   <!-- Parameter server stuff -->
+  <rosparam file="$(find balancing_grasping)/config/yumi_controllers.yaml" command="load"/>
+  <rosparam file="$(find balancing_grasping)/config/gripper_controllers.yaml" command="load" ns="/yumi/"/>
+  <rosparam file="$(find balancing_grasping)/config/yumi_limits_preload.yaml" command="load"/>
+  <rosparam file="$(find balancing_grasping)/config/exp_tasks.yaml" command="load" ns="/exp_node" />
+
+   <!-- Fire up Gazebo-->
+  <arg name="paused" default="false"/>
+  <arg name="use_sim_time" default="true"/>
+  <arg name="gui" default="false"/>
+  <arg name="headless" default="false"/>
+  <arg name="debug" default="false"/>
+  <arg name="rviz" default="true"/>
+  <arg unless="$(arg debug)" name="launch_prefix" value="" />
+  <arg if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="debug" value="$(arg debug)" />
+    <arg name="gui" value="$(arg gui)" />
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="use_sim_time" value="$(arg use_sim_time)"/>
+    <arg name="headless" value="$(arg headless)"/>
+  </include>
+
+  <!-- URDF / SRDF parameters -->
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find yumi_description)/urdf/yumi.urdf.xacro' arms_interface:=$(arg arms_hardware_interface) grippers_interface:=$(arg grippers_hardware_interface)" />
+  <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-urdf -model yumi -param robot_description"  respawn="false" output="screen" />
+  
+  <node name="arm_controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" args="$(arg controllers)" ns="/yumi"/>
+  <node name="gripper_controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" args="$(arg gripper_controllers)" ns="/yumi"/>
+
+  <node name="robot_state_publisher" 
+        pkg="robot_state_publisher" 
+        type="robot_state_publisher" 
+        respawn="false" 
+        output="screen">
+    <remap from="/joint_states" to="/yumi/joint_states" />
+  </node>
+
+  <node if="$(arg rviz)" name="rviz" pkg="rviz" type="rviz" args="-d $(find balancing_grasping)/launch/yumi.rviz"/>
+
+</launch>
+
+

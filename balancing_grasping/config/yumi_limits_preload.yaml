@@ -1,0 +1,32 @@
+yumi:
+  hiqp_joint_velocity_controller:
+    #####      JOINT LIMITATIONS    #####
+     hiqp_preload_jnt_limits:
+      - link_frame: yumi_link_1_r
+        limitations: [15.0, 1.4835, -2.94, 2.94, 20.0, 10.0] #ddq_max, dq_max, lower joint limit, upper joint limit, P gain, D gain
+      - link_frame: yumi_link_2_r
+        limitations: [15.0, 1.4835, -2.5, 0.75, 20.0, 10.0] 
+      - link_frame: yumi_link_3_r
+        limitations: [15.0, 1.7453, -2.94, 2.94, 20.0, 10.0]
+      - link_frame: yumi_link_4_r
+        limitations: [15.0, 1.3090, -2.16, 1.4, 20.0, 10.0]
+      - link_frame: yumi_link_5_r
+        limitations: [15.0, 2.2689, -5.07, 5.07, 20.0, 10.0] 
+      - link_frame: yumi_link_6_r
+        limitations: [15.0, 2.2689, -1.54, 2.41, 20.0, 10.0]
+      - link_frame: yumi_link_7_r
+        limitations: [15.0, 2.2689, -4.0, 4.0, 20.0, 10.0]
+      - link_frame: yumi_link_1_l
+        limitations: [15.0, 1.4835, -2.94, 2.94, 20.0, 10.0] #ddq_max, dq_max, lower joint limit, upper joint limit, P gain, D gain
+      - link_frame: yumi_link_2_l
+        limitations: [15.0, 1.4835, -2.5, 0.75, 20.0, 10.0] 
+      - link_frame: yumi_link_3_l
+        limitations: [15.0, 1.7453, -2.94, 2.94, 20.0, 10.0]
+      - link_frame: yumi_link_4_l
+        limitations: [15.0, 1.3090, -2.16, 1.4, 20.0, 10.0]
+      - link_frame: yumi_link_5_l
+        limitations: [15.0, 2.2689, -5.07, 5.07, 20.0, 10.0] 
+      - link_frame: yumi_link_6_l
+        limitations: [15.0, 2.2689, -1.54, 2.41, 20.0, 10.0]
+      - link_frame: yumi_link_7_l
+        limitations: [15.0, 2.2689, -4.0, 4.0, 20.0, 10.0] 
