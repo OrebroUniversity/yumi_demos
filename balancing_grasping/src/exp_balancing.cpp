@@ -58,18 +58,18 @@ ExpBalancing::ExpBalancing() {
   //---- setup TF frames we want to publish ----//
   //
   tf::Transform transform;
-  transform.setOrigin( tf::Vector3(0.5, 0.7, 0.4) );
+  transform.setOrigin( tf::Vector3(0.35, -0.1, 0.2) );
   tf::Quaternion q;
-  q.setRPY(1.8,0.1,1.9);
+  q.setRPY(-1.57, 1.57, 0.0);
   transform.setRotation(q);
-  target_poses.push_back(tf::StampedTransform(transform, ros::Time::now(), "base_link", "target_frame"));
-
-  transform.setOrigin( tf::Vector3(0.8, -0.25, 0.5) );
-  q.setRPY(1.0,0.5,1.7);
+  target_poses.push_back(tf::StampedTransform(transform, ros::Time::now(), "yumi_base_link", "grasp_r_frame"));
+  
+  transform.setOrigin( tf::Vector3(0.35, 0.1, 0.2) );
+  q.setRPY(1.57, -1.57, 0.0);
   transform.setRotation(q);
-  target_poses.push_back(tf::StampedTransform(transform, ros::Time::now(), "base_link", "target_frame"));
-
-  current_target_id=-1;
+  target_poses.push_back(tf::StampedTransform(transform, ros::Time::now(), "yumi_base_link", "grasp_l_frame"));
+  
+  //  current_target_id=-1;
   std::srand(std::time(0)); // use current time as seed for random generator
   bag_is_open = false;
 
@@ -149,7 +149,7 @@ void ExpBalancing::expMainLoop() {
     
   while(true) {
     //each iteration of this loop is a new set of experiments
-    current_target_id=-1;
+    //    current_target_id=-1;
 	
     {	
       boost::mutex::scoped_lock lock(bools_mutex);
@@ -350,7 +350,7 @@ void ExpBalancing::expMainLoop() {
       }
 
 	//remove previous tasks
-	hiqp_client_->removeTasks(grasp_task_names);
+      //	hiqp_client_->removeTasks(grasp_task_names);
 
       //close-up log files
       next_task = false;
@@ -568,12 +568,10 @@ bool ExpBalancing::loadTasksFromParamServer(std::string task_group_name, std::ve
 
 	
 void ExpBalancing::tf_pub_callback(const ros::TimerEvent &te) {
-
-  if(current_target_id >= 0 && current_target_id < target_poses.size()) {
-    target_poses[current_target_id].stamp_ = ros::Time::now();
-    tb.sendTransform(target_poses[current_target_id]);
+  for(unsigned int i=0; i<target_poses.size(); i++){
+    target_poses[i].stamp_ = ros::Time::now();
+    tb.sendTransform(target_poses[i]);    
   }
-
 }
 
 void ExpBalancing::marker_pub_callback(const ros::TimerEvent &te) {

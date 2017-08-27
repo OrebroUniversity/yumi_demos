@@ -68,7 +68,7 @@ class ExpBalancing {
     pick_assisted_task_names, drop_assisted_task_names, point_assisted_task_names;
 
   std::vector<tf::StampedTransform> target_poses;
-  size_t current_target_id;
+  //  size_t current_target_id;
 
   bool publish_markers;
   visualization_msgs::MarkerArray gripper_target, gripper_target_ass, object_ass, object_noass, current_markers;

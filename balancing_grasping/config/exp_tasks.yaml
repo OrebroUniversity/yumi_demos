@@ -41,8 +41,10 @@ pre_grasp_tasks:
    visible: true
    active: true
    monitored: true
-   def_params: ['TDefTracking', 'frame', 'frame', 'gripper_l_frame = pre_grasp_l_frame', '0.1', '0.5']
-   dyn_params: ['TDynPD', '10.0', '10.0', '10.0', '2.0', '2.0', '2.0', '7.0', '7.0', '7.0', '3.0', '3.0', '3.0']
+   def_params: ['TDefTracking', 'frame', 'frame', 'gripper_l_frame = pre_grasp_l_frame', '0.1']
+   dyn_params: ['TDynPD', '3.0', '4.0']
+#   def_params: ['TDefTracking', 'frame', 'frame', 'gripper_l_frame = pre_grasp_l_frame', '0.1', '0.5']
+#   dyn_params: ['TDynPD', '10.0', '10.0', '10.0', '2.0', '2.0', '2.0', '7.0', '7.0', '7.0', '3.0', '3.0', '3.0']
 # - name: neutral pose
 #   priority: 3
 #   visible: true
