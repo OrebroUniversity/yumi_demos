@@ -6,6 +6,9 @@
      <param name="frame_left" type="string" value="grasp_link"/>
      <param name="log_directory" value="$(find balancing_grasping)/log"/>
      <param name="robot_namespace" value="yumi"/>
+     <param name="grasp_acq_dur" value="4.0"/>
+     <param name="grasp_cont_dur" value="2.0"/>
+     <param name="grasp_lift_dur" value="3.0"/>
   </node>
 
 

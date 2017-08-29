@@ -9,11 +9,10 @@ Panels:
         - /RobotModel1
         - /RobotModel1/Links1
         - /Tasks1
-        - /TF1
         - /TF1/Frames1
         - /TF1/Tree1
       Splitter Ratio: 0.664206982
-    Tree Height: 280
+    Tree Height: 359
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -184,72 +183,80 @@ Visualization Manager:
       Value: true
       Visual Enabled: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /yumi/hiqp_joint_velocity_controller/visualization_marker
       Name: Tasks
       Namespaces:
-        /yumi: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/TF
       Enabled: true
       Frame Timeout: 15
       Frames:
-        All Enabled: true
+        All Enabled: false
+        grasp_l_frame:
+          Value: true
+        grasp_r_frame:
+          Value: true
         gripper_l_base:
-          Value: true
+          Value: false
         gripper_l_finger_l:
-          Value: true
+          Value: false
         gripper_l_finger_r:
-          Value: true
+          Value: false
         gripper_r_base:
-          Value: true
+          Value: false
         gripper_r_finger_l:
-          Value: true
+          Value: false
         gripper_r_finger_r:
-          Value: true
+          Value: false
         world:
-          Value: true
+          Value: false
         yumi_base_link:
-          Value: true
+          Value: false
         yumi_body:
-          Value: true
+          Value: false
         yumi_link_1_l:
-          Value: true
+          Value: false
         yumi_link_1_r:
-          Value: true
+          Value: false
         yumi_link_2_l:
-          Value: true
+          Value: false
         yumi_link_2_r:
-          Value: true
+          Value: false
         yumi_link_3_l:
-          Value: true
+          Value: false
         yumi_link_3_r:
-          Value: true
+          Value: false
         yumi_link_4_l:
-          Value: true
+          Value: false
         yumi_link_4_r:
-          Value: true
+          Value: false
         yumi_link_5_l:
-          Value: true
+          Value: false
         yumi_link_5_r:
-          Value: true
+          Value: false
         yumi_link_6_l:
-          Value: true
+          Value: false
         yumi_link_6_r:
-          Value: true
+          Value: false
         yumi_link_7_l:
-          Value: true
+          Value: false
         yumi_link_7_r:
-          Value: true
+          Value: false
       Marker Scale: 1
       Name: TF
       Show Arrows: false
-      Show Axes: false
+      Show Axes: true
       Show Names: false
       Tree:
         world:
           yumi_base_link:
+            grasp_l_frame:
+              {}
+            grasp_r_frame:
+              {}
             yumi_body:
               yumi_link_1_l:
                 yumi_link_2_l:
@@ -331,7 +338,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1.41058981
+      Distance: 1.22013462
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -345,18 +352,18 @@ Visualization Manager:
       Focal Shape Size: 0.0500000007
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.134798005
+      Pitch: 0.324798703
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.92036009
+      Yaw: 6.01535845
     Saved: ~
 Window Geometry:
   Displays:
-    collapsed: false
-  Height: 493
-  Hide Left Dock: false
+    collapsed: true
+  Height: 494
+  Hide Left Dock: true
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000001cb000001a7fc0200000008fb0000001200530065006c0065006300740069006f006e0000000028000000c00000006400fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730100000028000001a7000000dd00fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000014500000297fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000002800000297000000b000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000039200000052fc0100000002fb0000000800540069006d00650000000000000003920000030000fffffffb0000000800540069006d0065010000000000000450000000000000000000000293000001a700000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000001cb000001a7fc0200000008fb0000001200530065006c0065006300740069006f006e0000000028000000c00000006400fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730000000028000001a7000000dd00fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000014500000297fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000002800000297000000b000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000039200000052fc0100000002fb0000000800540069006d00650000000000000003920000030000fffffffb0000000800540069006d0065010000000000000450000000000000000000000398000001a800000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -365,6 +372,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1124
-  X: 795
-  Y: 559
+  Width: 920
+  X: 989
+  Y: 558

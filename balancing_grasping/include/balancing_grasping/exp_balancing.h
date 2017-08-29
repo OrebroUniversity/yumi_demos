@@ -18,7 +18,6 @@
 #include <tf/transform_broadcaster.h>
 #include <tf_conversions/tf_eigen.h>
 #include <eigen_conversions/eigen_msg.h>
-
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition_variable.hpp>
 
@@ -28,7 +27,8 @@ class ExpBalancing {
  private:
   ros::NodeHandle nh_;
   ros::NodeHandle n_;
-
+  tf::Transform pre_grasp_r_frame, pre_grasp_l_frame;
+  
   //  ros::Subscriber grasp_left_sub_;
 
   ros::Subscriber joint_state_sub_;
@@ -41,17 +41,19 @@ class ExpBalancing {
   std::shared_ptr<hiqp_ros::HiQPClient> hiqp_client_;
 	
   ros::ServiceServer start_demo_;
-  ros::ServiceServer next_task_srv_;
+  //  ros::ServiceServer next_task_srv_;
   ros::ServiceServer switch_align_;
   ros::ServiceServer quit_demo_;
-
+  //  ros::ServiceClient pg_client_;
+  
   tf::TransformListener tl;
   tf::TransformBroadcaster tb;
-
+    
   ros::Timer tf_pub_timer, marker_pub_timer;
 
-  boost::mutex bools_mutex, bag_mutex;
+  boost::mutex bools_mutex, bag_mutex, tf_pub_mutex;
   boost::condition_variable cond_;
+  boost::condition_variable tf_pub_cond_;  
 
   std::string js_topic, tf_topic;
   std::string log_dir;
@@ -59,15 +61,16 @@ class ExpBalancing {
   double grasp_thresh, joint_task_tol, pre_grasp_task_tol, grasp_task_tol;
   int num_pickups;
 
-  bool next_task, quit_demo;
+  bool  quit_demo, tf_published;
 
-  double grasp_thresh_tol;
+  double grasp_thresh_tol, grasp_acq_dur, grasp_lift_dur, grasp_cont_dur;
   std::vector<hiqp_msgs::Task> pre_grasp_tasks, grasp_tasks, joint_tasks, teleop_tasks,
     pick_assisted_tasks, drop_assisted_tasks, point_assisted_tasks;
   std::vector<std::string> pre_grasp_task_names, grasp_task_names, joint_task_names, teleop_task_names,
     pick_assisted_task_names, drop_assisted_task_names, point_assisted_task_names;
-
+  
   std::vector<tf::StampedTransform> target_poses;
+  
   //  size_t current_target_id;
 
   bool publish_markers;
@@ -80,6 +83,10 @@ class ExpBalancing {
   bool bag_is_open;
  private:
   ///functions
+
+  bool loadPreGraspPoses();
+  std::list<tf::Transform> minJerk(const tf::Transform& start_pose, const tf::Transform& end_pose, double T, double dt); 
+  
   double getDoubleTime() {
     struct timeval time;
     gettimeofday(&time,NULL);
@@ -96,8 +103,8 @@ class ExpBalancing {
 
   bool start_demo_callback(std_srvs::Empty::Request  &req,
 			   std_srvs::Empty::Response &res );
-  bool next_task_callback(std_srvs::Empty::Request  &req,
-			  std_srvs::Empty::Response &res );
+  //  bool next_task_callback(std_srvs::Empty::Request  &req,
+			  /* std_srvs::Empty::Response &res ); */
   bool quit_demo_callback(std_srvs::Empty::Request  &req,
 			  std_srvs::Empty::Response &res );
 

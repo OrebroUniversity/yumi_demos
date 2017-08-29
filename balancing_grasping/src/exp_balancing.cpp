@@ -8,9 +8,10 @@
 #include <xmlrpcpp/XmlRpcValue.h>
 
 #include<balancing_grasping/exp_balancing.h>
+#define TF_PUBLISH_PERIOD 0.1
 
 ExpBalancing::ExpBalancing() {
-    
+
   nh_ = ros::NodeHandle("~");
   n_ = ros::NodeHandle();
 
@@ -26,6 +27,9 @@ ExpBalancing::ExpBalancing() {
   nh_.param("joint_task_tol",joint_task_tol,1e-2); //0 to 1
   nh_.param("pre_grasp_task_tol",pre_grasp_task_tol,1e-4); //0 to 1  
   nh_.param("grasp_task_tol", grasp_task_tol,1e-4); //0 to 1
+  nh_.param("grasp_acq_dur", grasp_acq_dur,3.0);
+  nh_.param("grasp_lift_dur", grasp_lift_dur,3.0);
+  nh_.param("grasp_cont_dur", grasp_cont_dur,2.0);  
   
   marker_viz_pub_ = nh_.advertise<visualization_msgs::MarkerArray> ("teleop_markers",10);
   //    gripper_pub_ = nh_.advertise<robotiq_85_msgs::GripperCmd> ("grasp_cmd",10);
@@ -35,17 +39,17 @@ ExpBalancing::ExpBalancing() {
   tf_sub_ = n_.subscribe(tf_topic, 1, &ExpBalancing::tf_callback, this);
 
   start_demo_ = nh_.advertiseService("start_demo", &ExpBalancing::start_demo_callback, this);
-  next_task_srv_ = nh_.advertiseService("next_task", &ExpBalancing::next_task_callback, this);
+  //  next_task_srv_ = nh_.advertiseService("next_task", &ExpBalancing::next_task_callback, this);
   quit_demo_ = nh_.advertiseService("quit_demo", &ExpBalancing::quit_demo_callback, this);
-   
+  
   std::string robot_namespace; 
   nh_.param<std::string>("robot_namespace",robot_namespace,"yumi");
   hiqp_client_ = std::shared_ptr<hiqp_ros::HiQPClient> (new hiqp_ros::HiQPClient(robot_namespace, "hiqp_joint_velocity_controller"));
 
-  tf_pub_timer = nh_.createTimer(ros::Duration(0.1), &ExpBalancing::tf_pub_callback, this);
-  marker_pub_timer = nh_.createTimer(ros::Duration(0.1), &ExpBalancing::marker_pub_callback, this);
+  tf_pub_timer = nh_.createTimer(ros::Duration(TF_PUBLISH_PERIOD), &ExpBalancing::tf_pub_callback, this);
+  marker_pub_timer = nh_.createTimer(ros::Duration(TF_PUBLISH_PERIOD), &ExpBalancing::marker_pub_callback, this);
   quit_demo = true;
-  next_task = false;
+  //  next_task = false;
   publish_markers = false;
   loadGeometricPrimitivesFromParamServer();
   loadTasksFromParamServer("joint_config_tasks", joint_tasks, joint_task_names);
@@ -55,19 +59,13 @@ ExpBalancing::ExpBalancing() {
   // loadTasksFromParamServer("drop_assisted_tasks", drop_assisted_tasks, drop_assisted_task_names);
   // loadTasksFromParamServer("point_assisted_tasks", point_assisted_tasks, point_assisted_task_names);
 
+  if(!loadPreGraspPoses())
+    ROS_ERROR("Incorrect pre-grasp pose setup!");
+  
   //---- setup TF frames we want to publish ----//
   //
-  tf::Transform transform;
-  transform.setOrigin( tf::Vector3(0.35, -0.1, 0.2) );
-  tf::Quaternion q;
-  q.setRPY(-1.57, 1.57, 0.0);
-  transform.setRotation(q);
-  target_poses.push_back(tf::StampedTransform(transform, ros::Time::now(), "yumi_base_link", "grasp_r_frame"));
-  
-  transform.setOrigin( tf::Vector3(0.35, 0.1, 0.2) );
-  q.setRPY(1.57, -1.57, 0.0);
-  transform.setRotation(q);
-  target_poses.push_back(tf::StampedTransform(transform, ros::Time::now(), "yumi_base_link", "grasp_l_frame"));
+  target_poses.push_back(tf::StampedTransform(pre_grasp_r_frame, ros::Time::now(), "yumi_base_link", "grasp_r_frame"));
+  target_poses.push_back(tf::StampedTransform(pre_grasp_l_frame, ros::Time::now(), "yumi_base_link", "grasp_l_frame"));
   
   //  current_target_id=-1;
   std::srand(std::time(0)); // use current time as seed for random generator
@@ -143,10 +141,11 @@ ExpBalancing::ExpBalancing() {
 
 void ExpBalancing::expMainLoop() {
 
-  std::vector<std::string> no_task_names, prev_task_names;
+  std::vector<std::string> prev_tasks;  
   std::vector<hiqp_ros::TaskDoneReaction> reactions;
   std::vector<double> tolerances;
-    
+  tf::Transform target_r_frame, target_l_frame, current_r_frame, current_l_frame;
+
   while(true) {
     //each iteration of this loop is a new set of experiments
     //    current_target_id=-1;
@@ -158,11 +157,10 @@ void ExpBalancing::expMainLoop() {
       }
 
     }
-    next_task = true;
+    //    next_task = true;
     cond_.notify_one();
     //---------------------------------------------------------------------------------------//	
-    //first task: move robot to init joint configuration
-    ROS_INFO("TASK SET 1: moving to init joint configuration.");
+    ROS_INFO("TASK SET 1: Moving to init joint configuration.");
     {
       reactions.clear();
       tolerances.clear();
@@ -171,27 +169,21 @@ void ExpBalancing::expMainLoop() {
 	tolerances.push_back(joint_task_tol);
       }
       
-      boost::mutex::scoped_lock lock(bools_mutex);
-      while(!next_task && !quit_demo) {
-	cond_.wait(lock);
-      }
-      if(quit_demo) {
+      // boost::mutex::scoped_lock lock(bools_mutex);
+      // while(!quit_demo) {
+      // 	cond_.wait(lock);
+      // }
+      // if(quit_demo) {
 	//reset variables and so on
-	continue;
-      }
-      if(next_task) {
-	//execute next task
+      //	continue;
+	//}
 	hiqp_client_->setTasks(joint_tasks);
-      }
-      next_task = false;
     }
 	
     hiqp_client_->waitForCompletion(joint_task_names, reactions, tolerances);
-    next_task = true;
-    cond_.notify_one();
+    //cond_.notify_one();
     //---------------------------------------------------------------------------------------//
-    //second task: move to pre-grasp poses
-    ROS_INFO("TASK SET 2: moving to pre-grasp poses.");    
+    ROS_INFO("TASK SET 2: Moving to pre-grasp poses.");    
     {
       reactions.clear();
       tolerances.clear();
@@ -200,160 +192,142 @@ void ExpBalancing::expMainLoop() {
 	tolerances.push_back(pre_grasp_task_tol);
       }
 
-      boost::mutex::scoped_lock lock(bools_mutex);
-      while(!next_task && !quit_demo) {
-	cond_.wait(lock);
-      }
-      if(quit_demo) {
-	//reset variables and so on
-	continue;
-      }
-      if(next_task) {
-	//execute next task
+      // boost::mutex::scoped_lock lock(bools_mutex);
+      // while(!quit_demo) {
+      // 	cond_.wait(lock);
+      // }
+      // if(quit_demo) {
+      // 	//reset variables and so on
+      // 	continue;
+      // }
+
 	hiqp_client_->setTasks(pre_grasp_tasks);
-      }
-      next_task = false;
+
     }
 	
     hiqp_client_->waitForCompletion(pre_grasp_task_names, reactions, tolerances);
-    next_task = true;
-    cond_.notify_one();    
+    //    cond_.notify_one();    
     //---------------------------------------------------------------------------------------//
-    //third task: grasp poses
-    ROS_INFO("TASK SET 3: moving to grasp poses.");        
+    ROS_INFO("TASK SET 3: Moving to grasp poses.");        
     {
-      reactions.clear();
-      tolerances.clear();
-      for(int i=0; i<grasp_task_names.size(); i++) { 
-	reactions.push_back(hiqp_ros::TaskDoneReaction::REMOVE);
-	tolerances.push_back(grasp_task_tol);
-      }
+      current_r_frame=pre_grasp_r_frame;
+      current_l_frame=pre_grasp_l_frame;
+      target_r_frame=current_r_frame;
+      target_l_frame=current_l_frame;
+    
+      //HACK: should randomize x/y pose of the grasp target frames    
+      tf::Vector3 v=current_r_frame.getOrigin();
+      v.setY(-0.1);
+      target_r_frame.setOrigin(v);
+      v=current_l_frame.getOrigin();
+      v.setY(0.1);
+      target_l_frame.setOrigin(v);
 
-      boost::mutex::scoped_lock lock(bools_mutex);
-      while(!next_task && !quit_demo) {
-	cond_.wait(lock);
+   
+      std::list<tf::Transform> poses_r = minJerk(current_r_frame, target_r_frame, grasp_acq_dur, TF_PUBLISH_PERIOD);
+      std::list<tf::Transform> poses_l = minJerk(current_l_frame, target_l_frame, grasp_acq_dur, TF_PUBLISH_PERIOD);
+
+      prev_tasks.clear();
+      setTasks(grasp_tasks, prev_tasks );
+      boost::mutex::scoped_lock lock(tf_pub_mutex);   
+
+      tf_published=false;
+      while(!poses_r.empty() && !poses_l.empty() && !quit_demo) {
+	tf_pub_cond_.wait(lock);
+
+	target_poses.clear();
+	target_poses.push_back(tf::StampedTransform(poses_r.front(),ros::Time::now(),"yumi_base_link","grasp_r_frame"));
+	target_poses.push_back(tf::StampedTransform(poses_l.front(),ros::Time::now(),"yumi_base_link","grasp_l_frame"));
+	poses_r.pop_front();
+	poses_l.pop_front();
       }
       if(quit_demo) {
-	//reset variables and so on
 	continue;
       }
-      if(next_task) {
-	//execute next task
-	hiqp_client_->setTasks(grasp_tasks);
-      }
-      next_task = false;
+      ROS_INFO("Finished moving to grasp acquisition poses.");
     }
-	
-    hiqp_client_->waitForCompletion(grasp_task_names, reactions, tolerances);
-    
+
     //---------------------------------------------------------------------------------------//
-    //second task: pointing task 
-    //int rv = std::rand();
-    // {
-    //   prev_task_names.clear();
+    ROS_INFO("TASK SET 4: Establishing contact.");        
+    {
+      current_r_frame=target_r_frame;
+      current_l_frame=target_l_frame;    
+      tf::Vector3 v=current_r_frame.getOrigin();
+      v.setZ(v.getZ()+0.01);
+      target_r_frame.setOrigin(v);
+      v=current_l_frame.getOrigin();
+      v.setZ(v.getZ()+0.01);
+      target_l_frame.setOrigin(v);
 
-    //   //free-form
-    //   ROS_INFO("Pointing task, first no assistance");
-    //   current_target_id=0;
-    //   setTasks(teleop_tasks, no_task_names);
-    //   setPubMarkers(gripper_target);
-    //   startNextBag("task1_noassist.bag");
-      
-    //   while(current_target_id < target_poses.size()) { 
-    // 	ROS_INFO("Going for pose %lu",current_target_id);
-    // 	//wait for completion
-    // 	//	if(!waitForPoseAlignment()) break;
-    // 	//increment target id
-    // 	current_target_id++;
-    //   }
-    //   hiqp_client_->removeTasks(teleop_task_names);
-    //   closeCurrentBag();
-    //   stopPubMarkers();
-    //   if(current_target_id < target_poses.size()) continue;
+      std::list<tf::Transform> poses_r = minJerk(current_r_frame, target_r_frame, grasp_cont_dur, TF_PUBLISH_PERIOD);
+      std::list<tf::Transform> poses_l = minJerk(current_l_frame, target_l_frame, grasp_cont_dur, TF_PUBLISH_PERIOD);
 
-    //   //assisted
-    //   current_target_id=0;
-    //   ROS_INFO("Back to initial configuration");
-    //   hiqp_client_->setTasks(joint_tasks);
-    //   hiqp_client_->waitForCompletion(joint_task_names, reactions, tolerances);
-    //   setTasks(point_assisted_tasks, no_task_names);
-    //   setPubMarkers(gripper_target_ass);
-    //   startNextBag("task1_assist.bag");
-    //   while(current_target_id < target_poses.size()) { 
-    // 	ROS_INFO("Going for pose %lu",current_target_id);
-    // 	//wait for completion
-    // 	//	if(!waitForPoseAlignment()) break;
-    // 	//increment target id
-    // 	current_target_id++;
-    //   }
-    //   closeCurrentBag();
-    //   stopPubMarkers();
-    //   hiqp_client_->removeTasks(point_assisted_task_names);
-    //   if(current_target_id < target_poses.size()) continue;
-    // }
-    //---------------------------------------------------------------------------------------//	
-    //third task: picking task
-    // {
-    //   ROS_INFO("Back to initial configuration");
-    //   hiqp_client_->setTasks(joint_tasks);
-    //   hiqp_client_->waitForCompletion(joint_task_names, reactions, tolerances);
+      boost::mutex::scoped_lock lock(tf_pub_mutex);   
 
-    //   std::string ass_name, noass_name;
-    //   std::stringstream ss;
-    //   for(int run_number=0; run_number < num_pickups; run_number++) {
-	
-    // 	ss<<"task2_assist_r"<<run_number<<".bag";
-    // 	ss>>ass_name;
-    // 	ss.clear();
-	    
-    // 	ss<<"task2_noassist_r"<<run_number<<".bag";
-    // 	ss>>noass_name;
-    // 	ss.clear();
-	
-    // 	//      rv = std::rand();
+      while(!poses_r.empty() && !poses_l.empty() && !quit_demo) {
+	tf_pub_cond_.wait(lock);
+	//	std::cerr<<"pushing new poses, time: "<<ros::Time::now().toSec()<<std::endl;
+	target_poses.clear();
+	target_poses.push_back(tf::StampedTransform(poses_r.front(),ros::Time::now(),"yumi_base_link","grasp_r_frame"));
+	target_poses.push_back(tf::StampedTransform(poses_l.front(),ros::Time::now(),"yumi_base_link","grasp_l_frame"));
+	poses_r.pop_front();
+	poses_l.pop_front();
+      }
+      if(quit_demo) {
+	continue;
+      }
+      ROS_INFO("Established contact.");
+    }
+    //---------------------------------------------------------------------------------------//
+    ROS_INFO("TASK SET 5: moving to lift poses.");        
+    {
+      current_r_frame=target_r_frame;
+      current_l_frame=target_l_frame;    
+      tf::Vector3 v=current_r_frame.getOrigin();
+      v.setZ(v.getZ()+0.05);
+      target_r_frame.setOrigin(v);
+      v=current_l_frame.getOrigin();
+      v.setZ(v.getZ()+0.05);
+      target_l_frame.setOrigin(v);
 
-    // 	ROS_INFO("Pick and drop, first NO assistance");
-    // 	//free-form
-    // 	if(!setTasks(teleop_tasks, no_task_names)) continue;
-    // 	startNextBag(noass_name);
-    // 	setPubMarkers(object_noass);
-    // 	if(!setTasks(joint_tasks, teleop_task_names)) continue;
-    // 	closeCurrentBag();
-    // 	stopPubMarkers();
-    // 	hiqp_client_->waitForCompletion(joint_task_names, reactions, tolerances);
+      std::list<tf::Transform> poses_r = minJerk(current_r_frame, target_r_frame, grasp_lift_dur, TF_PUBLISH_PERIOD);
+      std::list<tf::Transform> poses_l = minJerk(current_l_frame, target_l_frame, grasp_lift_dur, TF_PUBLISH_PERIOD);
 
-    // 	//assisted picking
-    // 	if(!setTasks(pick_assisted_tasks, no_task_names)) continue;
-    // 	startNextBag(ass_name);
-    // 	setPubMarkers(object_ass);
-    // 	if(!setTasks(drop_assisted_tasks, pick_assisted_task_names)) continue;
-    // 	if(!setTasks(joint_tasks, drop_assisted_task_names)) continue;
-    // 	closeCurrentBag();
-    // 	stopPubMarkers();
-    // 	hiqp_client_->waitForCompletion(joint_task_names, reactions, tolerances);
-    //   }
-    // }
+      boost::mutex::scoped_lock lock(tf_pub_mutex);   
+
+      while(!poses_r.empty() && !poses_l.empty() && !quit_demo) {
+	tf_pub_cond_.wait(lock);
+
+	target_poses.clear();
+	target_poses.push_back(tf::StampedTransform(poses_r.front(),ros::Time::now(),"yumi_base_link","grasp_r_frame"));
+	target_poses.push_back(tf::StampedTransform(poses_l.front(),ros::Time::now(),"yumi_base_link","grasp_l_frame"));
+	poses_r.pop_front();
+	poses_l.pop_front();
+      }
+      if(quit_demo) {
+	continue;
+      }
+
+      ROS_INFO("Finished moving to lift poses.");
+    }
     //---------------------------------------------------------------------------------------//	
     //quitting
     {	    
       boost::mutex::scoped_lock lock(bools_mutex);
       //close-up log files
-      next_task = false;
       quit_demo = true;
     }
 #if 1
     //wait for quitting
     {	    
-      boost::mutex::scoped_lock lock(bools_mutex);
-      while(!next_task && !quit_demo) {
-	cond_.wait(lock);
-      }
+      // boost::mutex::scoped_lock lock(bools_mutex);
+      // while(!quit_demo) {
+      // 	cond_.wait(lock);
+      // }
 
-	//remove previous tasks
-      //	hiqp_client_->removeTasks(grasp_task_names);
+      //remove previous tasks
+      hiqp_client_->removeTasks(grasp_task_names);
 
-      //close-up log files
-      next_task = false;
     }
 #endif
     ROS_INFO("Quit Demo.");
@@ -362,11 +336,11 @@ void ExpBalancing::expMainLoop() {
 }
 bool ExpBalancing::setTasks(std::vector<hiqp_msgs::Task> &next_tasks,
 			    std::vector<std::string> &prev_task_names) {
-    
   boost::mutex::scoped_lock lock(bools_mutex);
-  while(!next_task && !quit_demo) {
-    cond_.wait(lock);
-  }
+  // while(!quit_demo) {
+  // std::cerr<<"n set tasks."<<std::endl;    
+  //   cond_.wait(lock);
+  // }
   if(prev_task_names.size() > 0) {
     //remove previous tasks
     hiqp_client_->removeTasks(prev_task_names);
@@ -375,12 +349,9 @@ bool ExpBalancing::setTasks(std::vector<hiqp_msgs::Task> &next_tasks,
     //reset variables and so on
     return false;
   }
-  std::cerr<<"in setTasks(...), next_task is: "<<next_task<<std::endl;
-  if(next_task) {
-    //execute next task
+
     hiqp_client_->setTasks(next_tasks);
-  }
-  next_task = false;
+
   return true;
 }
 
@@ -397,6 +368,42 @@ bool ExpBalancing::setTasks(std::vector<hiqp_msgs::Task> &next_tasks,
 //   next_task = false;
 //   return true;
 // }
+
+bool ExpBalancing::loadPreGraspPoses(){
+  XmlRpc::XmlRpcValue hiqp_grasping_geometric_primitives;
+  if (!nh_.getParam("grasping_geometric_primitives", hiqp_grasping_geometric_primitives)) {
+    ROS_WARN_STREAM("No grasping_geometric_primitives parameter "
+		    << "found on the parameter server. Cannot identify pre-grasp pose!");
+    return false;
+  } else {
+    for (int i = 0; i < hiqp_grasping_geometric_primitives.size(); ++i) {
+      std::string frame_id = static_cast<std::string>(hiqp_grasping_geometric_primitives[i]["frame_id"]);
+      std::string name = static_cast<std::string>(hiqp_grasping_geometric_primitives[i]["name"]);
+      XmlRpc::XmlRpcValue& parameters_xml = hiqp_grasping_geometric_primitives[i]["parameters"];
+      std::vector<double> parameters;
+      for (int j = 0; j < parameters_xml.size(); ++j) parameters.push_back(static_cast<double>(parameters_xml[j]));
+	  
+      ROS_ASSERT(parameters.size()==6);
+      tf::Vector3 v(parameters[0], parameters[1], parameters[2]);
+      Eigen::Quaterniond q(Eigen::Matrix3d(Eigen::AngleAxisd(parameters[3], Eigen::Vector3d::UnitX()) *
+					   Eigen::AngleAxisd(parameters[4], Eigen::Vector3d::UnitY()) *
+					   Eigen::AngleAxisd(parameters[5], Eigen::Vector3d::UnitZ())));
+	
+      if(strcmp(name.c_str(),"pre_grasp_r_frame") == 0){
+	pre_grasp_r_frame.setRotation(tf::Quaternion(q.x(), q.y(), q.z(), q.w()));
+	pre_grasp_r_frame.setOrigin(v);
+	ROS_INFO("Parametrized pre_grasp_r_frame");
+      }
+      if(strcmp(name.c_str(),"pre_grasp_l_frame") == 0){
+	pre_grasp_l_frame.setRotation(tf::Quaternion(q.x(), q.y(), q.z(), q.w()));
+	pre_grasp_l_frame.setOrigin(v);
+	ROS_INFO("Parametrized pre_grasp_l_frame");	  
+      }
+	
+    }
+  }
+  return true;
+}
 
 bool ExpBalancing::start_demo_callback(std_srvs::Empty::Request  &req,
 				       std_srvs::Empty::Response &res ) {
@@ -416,19 +423,19 @@ bool ExpBalancing::start_demo_callback(std_srvs::Empty::Request  &req,
   return true;
 }
 
-bool ExpBalancing::next_task_callback(std_srvs::Empty::Request  &req,
-				      std_srvs::Empty::Response &res ) {
+// bool ExpBalancing::next_task_callback(std_srvs::Empty::Request  &req,
+// 				      std_srvs::Empty::Response &res ) {
 
-  ROS_INFO("Executing next task");
-  {
-    boost::mutex::scoped_lock lock(bools_mutex, boost::try_to_lock);
-    if(!lock) return false;
-    next_task = true;
-    cond_.notify_one();
-  }
+//   ROS_INFO("Executing next task");
+//   {
+//     boost::mutex::scoped_lock lock(bools_mutex, boost::try_to_lock);
+//     if(!lock) return false;
+//     next_task = true;
+//     cond_.notify_one();
+//   }
 
-  return true;
-}
+//   return true;
+// }
 
 bool ExpBalancing::quit_demo_callback(std_srvs::Empty::Request  &req,
 				      std_srvs::Empty::Response &res ) {
@@ -568,10 +575,28 @@ bool ExpBalancing::loadTasksFromParamServer(std::string task_group_name, std::ve
 
 	
 void ExpBalancing::tf_pub_callback(const ros::TimerEvent &te) {
-  for(unsigned int i=0; i<target_poses.size(); i++){
-    target_poses[i].stamp_ = ros::Time::now();
-    tb.sendTransform(target_poses[i]);    
+  {
+
+    boost::mutex::scoped_lock lock(tf_pub_mutex, boost::try_to_lock);
+    if(lock){
+      for(unsigned int i=0; i<target_poses.size(); i++){
+	target_poses[i].stamp_ = ros::Time::now();
+	tb.sendTransform(target_poses[i]);
+
+	//DEBUG =========================================
+	// std::cerr<<"Publishing target pose"<<std::endl;
+	// std::cerr<<"frame_id_: "<<target_poses[i].frame_id_<<std::endl;
+	// std::cerr<<"child_frame_id_: "<<target_poses[i].child_frame_id_<<std::endl;
+	
+	// std::cerr<<"origin: "<<target_poses[i].getOrigin().getX()<<" "<<target_poses[i].getOrigin().getY()<<" "<<target_poses[i].getOrigin().getZ()<<std::endl<<std::endl;
+	//DEBUG END =========================================
+      }
+
+      tf_pub_cond_.notify_one();
+    }
   }
+
+  // return true;
 }
 
 void ExpBalancing::marker_pub_callback(const ros::TimerEvent &te) {
@@ -652,6 +677,26 @@ void ExpBalancing::setPubMarkers(visualization_msgs::MarkerArray &markers) {
 void ExpBalancing::stopPubMarkers() {
 
   publish_markers = false;
+}
+
+std::list<tf::Transform> ExpBalancing::minJerk(const tf::Transform& start_pose, const tf::Transform& end_pose, double T, double dt){
+  std::list<tf::Transform> poses;
+  ROS_ASSERT(dt > 0.0 && T > dt);
+
+  tf::Vector3 vi=start_pose.getOrigin();
+  tf::Vector3 ve=end_pose.getOrigin();
+ 
+  Eigen::Quaterniond qi(start_pose.getRotation().getW(), start_pose.getRotation().getX(),start_pose.getRotation().getY(), start_pose.getRotation().getZ());
+  Eigen::Quaterniond qe(end_pose.getRotation().getW(), end_pose.getRotation().getX(),end_pose.getRotation().getY(), end_pose.getRotation().getZ());    
+  double t=0;
+  for(unsigned int i=0; i<ceil(T/dt)+1; i++){
+    tf::Vector3 v=vi+(ve-vi)*(10*pow(t/T,3)-15*pow(t/T,4)+6*pow(t/T,5));
+    double ip=(10*pow(t/T,3)-15*pow(t/T,4)+6*pow(t/T,5));
+    Eigen::Quaterniond q = qi.slerp(ip, qe);
+    poses.push_back(tf::Transform(tf::Quaternion(q.x(),q.y(),q.z(),q.w()),v));
+    t+=dt;
+  }
+  return poses;
 }
 
 // void ExpBalancing::addCylinderMarker(visualization_msgs::MarkerArray &markers,
