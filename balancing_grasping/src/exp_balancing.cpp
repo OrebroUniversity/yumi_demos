@@ -17,7 +17,10 @@ ExpBalancing::ExpBalancing() {
 
   //nh_.param<std::string>("grasp_left_topic",gleft_topic,"/leap_hands/grasp_left");
   nh_.param<std::string>("tf_topic",tf_topic,"/tf");
+  nh_.param<std::string>("tf_static_topic",tf_static_topic,"/tf_static");  
   nh_.param<std::string>("js_topic",js_topic,"/yumi/joint_states");
+  nh_.param<std::string>("ts_r_topic",ts_r_topic,"/sensor_1/frames");
+  nh_.param<std::string>("ts_l_topic",ts_l_topic,"/sensor_2/frames");  
 
   //nh_.param<std::string>("hand_frame_left",hand_frame_left,"teleop_left_frame");
   nh_.param<std::string>("log_directory",log_dir,"log");
@@ -36,13 +39,16 @@ ExpBalancing::ExpBalancing() {
   nh_.param("grasp_cont_dur", grasp_cont_dur,2.0);  
   nh_.param("grasp_task_dur", grasp_task_dur,10.0);
 
-  marker_viz_pub_ = nh_.advertise<visualization_msgs::MarkerArray> ("teleop_markers",10);
+  //  marker_viz_pub_ = nh_.advertise<visualization_msgs::MarkerArray> ("teleop_markers",10);
   //    gripper_pub_ = nh_.advertise<robotiq_85_msgs::GripperCmd> ("grasp_cmd",10);
 
   //  grasp_left_sub_ = n_.subscribe(gleft_topic, 1, &ExpBalancing::grasp_left_callback, this);
+  ts_r_sub_ = n_.subscribe(ts_r_topic, 1, &ExpBalancing::ts_callback, this);
+  ts_l_sub_ = n_.subscribe(ts_l_topic, 1, &ExpBalancing::ts_callback, this);    
   joint_state_sub_ = n_.subscribe(js_topic, 1, &ExpBalancing::js_callback, this);
   tf_sub_ = n_.subscribe(tf_topic, 1, &ExpBalancing::tf_callback, this);
-
+  tf_static_sub_ = n_.subscribe(tf_static_topic, 1, &ExpBalancing::tf_callback, this);
+    
   start_demo_ = nh_.advertiseService("start_demo", &ExpBalancing::start_demo_callback, this);
   //  next_task_srv_ = nh_.advertiseService("next_task", &ExpBalancing::next_task_callback, this);
   quit_demo_ = nh_.advertiseService("quit_demo", &ExpBalancing::quit_demo_callback, this);
@@ -52,10 +58,10 @@ ExpBalancing::ExpBalancing() {
   hiqp_client_ = std::shared_ptr<hiqp_ros::HiQPClient> (new hiqp_ros::HiQPClient(robot_namespace, "hiqp_joint_velocity_controller"));
 
   tf_pub_timer = nh_.createTimer(ros::Duration(TF_PUBLISH_PERIOD), &ExpBalancing::tf_pub_callback, this);
-  marker_pub_timer = nh_.createTimer(ros::Duration(TF_PUBLISH_PERIOD), &ExpBalancing::marker_pub_callback, this);
+  //  marker_pub_timer = nh_.createTimer(ros::Duration(TF_PUBLISH_PERIOD), &ExpBalancing::marker_pub_callback, this);
   quit_demo = true;
   //  next_task = false;
-  publish_markers = false;
+  //  publish_markers = false;
   loadGeometricPrimitivesFromParamServer();
   loadTasksFromParamServer("joint_config_tasks", joint_tasks, joint_task_names);
   loadTasksFromParamServer("pre_grasp_tasks", pre_grasp_tasks, pre_grasp_task_names);
@@ -67,74 +73,7 @@ ExpBalancing::ExpBalancing() {
   //  current_target_id=-1;
   std::srand(std::time(0)); // use current time as seed for random generator
   bag_is_open = false;
-
-  //----- markers ------/
-  // addCylinderMarker(object_ass, obj_pos, obj_axis, 0.1, obj_frame,0.3, "object", 0.1, 0.9, 0.1);
-  // addCylinderMarker(object_ass, bin_pos, bin_axis, 0.1, bin_frame,0.3, "object", 0.1, 0.9, 0.1);
-
-  // addCylinderMarker(object_noass, obj_pos, obj_axis, 0.1, obj_frame,0.3, "object", 0.9, 0.1, 0.1);
-  // addCylinderMarker(object_noass, bin_pos, bin_axis, 0.1, bin_frame,0.3, "object", 0.9, 0.1, 0.1);
-   
-  // std::string gripper_mesh_resource_path; 
-  // nh_.param<std::string>("gripper_mesh_resource_path",gripper_mesh_resource_path,
-  // 			 "package://amici_teleop/meshes/gripper_full_scaled.stl");
-
-  // visualization_msgs::Marker marker;
-  // marker.ns = "gripper_mesh";
-  // marker.header.frame_id = "target_frame";
-  // marker.header.stamp = ros::Time::now();
-  // marker.type = visualization_msgs::Marker::MESH_RESOURCE;
-  // marker.mesh_resource = gripper_mesh_resource_path;
-  // marker.action = visualization_msgs::Marker::ADD;
-  // marker.lifetime = ros::Duration(0.2);
-  // marker.id = 0;
-  // marker.pose.position.x = 0;
-  // marker.pose.position.y = 0;
-  // marker.pose.position.z = 0;
-  // marker.pose.orientation.x = 0;
-  // marker.pose.orientation.y = 0;
-  // marker.pose.orientation.z = 0;
-  // marker.pose.orientation.w = 1;
-  // marker.scale.x = 1;
-  // marker.scale.y = 1;
-  // marker.scale.z = 1;
-  // marker.color.r = 0.9;
-  // marker.color.g = 0.1;
-  // marker.color.b = 0.1;
-  // marker.color.a = 0.1;
-  // gripper_target.markers.push_back(marker);
-  // marker.color.r = 0.1;
-  // marker.color.g = 0.9;
-  // marker.color.b = 0.1;
-  // marker.color.a = 0.1;
-  // gripper_target_ass.markers.push_back(marker);
-
 }
-
-//void ExpBalancing::grasp_left_callback(const std_msgs::Float32::ConstPtr& msg) {
-//     robotiq_85_msgs::GripperCmd cmd;
-//     cmd.emergency_release = false;
-//     cmd.stop = false;       
-//     cmd.position = (1-msg->data)*0.085;
-//     cmd.position = cmd.position > 0.085 ? 0.085 : (cmd.position < 0 ? 0 : cmd.position);
-//     cmd.speed = 0.05;
-//     cmd.force =10;
-//     gripper_pub_.publish(cmd);
-// #if 0
-//     if(msg->data > grasp_thresh+grasp_thresh_tol) {
-// 	cmd.position = 0.0;
-// 	cmd.speed = 0.05;
-// 	cmd.force =10;
-// 	gripper_pub_.publish(cmd);
-//     }
-//     if(msg->data < grasp_thresh-grasp_thresh_tol) { 
-// 	cmd.position = 0.085;
-// 	cmd.speed = 0.05;
-// 	cmd.force =10;
-// 	gripper_pub_.publish(cmd);
-//     }
-// #endif
-//}
 
 void ExpBalancing::expMainLoop() {
 
@@ -157,7 +96,7 @@ void ExpBalancing::expMainLoop() {
     //    next_task = true;
     cond_.notify_one();
     hiqp_client_->removeTasks(grasp_task_names);
-    #if 1
+#if 1
     //---------------------------------------------------------------------------------------//	
     ROS_INFO("TASK SET 1: Moving to init joint configuration.");
     {
@@ -209,6 +148,13 @@ void ExpBalancing::expMainLoop() {
     //---------------------------------------------------------------------------------------//
     ROS_INFO("TASK SET 3: Moving to grasp poses.");        
     {
+      reactions.clear();
+      tolerances.clear();
+      for(int i=0; i<grasp_task_names.size(); i++) { 
+	reactions.push_back(hiqp_ros::TaskDoneReaction::NONE);
+	tolerances.push_back(grasp_task_tol);
+      }
+      
       current_r_frame=pre_grasp_r_frame;
       current_l_frame=pre_grasp_l_frame;
       target_r_frame=current_r_frame;
@@ -225,8 +171,9 @@ void ExpBalancing::expMainLoop() {
       v.setY(0.1);      
       v.setX(v.getX()+randomNumber(-grasp_rand/2, grasp_rand/2));
       target_l_frame.setOrigin(v);
+      //TODO: randomize orientations around world z
 
-   
+      
       std::list<tf::Transform> poses_r = minJerkTraj(current_r_frame, target_r_frame, grasp_acq_dur, TF_PUBLISH_PERIOD);
       std::list<tf::Transform> poses_l = minJerkTraj(current_l_frame, target_l_frame, grasp_acq_dur, TF_PUBLISH_PERIOD);
       std::list<tf::Transform> poses_obj = minJerkTraj(current_obj_frame, target_obj_frame, grasp_acq_dur, TF_PUBLISH_PERIOD);
@@ -249,12 +196,21 @@ void ExpBalancing::expMainLoop() {
       if(quit_demo) {
 	continue;
       }
+      
+      hiqp_client_->waitForCompletion(grasp_task_names, reactions, tolerances);
       ROS_INFO("Finished moving to grasp acquisition poses.");
     }
 
     //---------------------------------------------------------------------------------------//
     ROS_INFO("TASK SET 4: Establishing contact.");        
     {
+      reactions.clear();
+      tolerances.clear();
+      for(int i=0; i<grasp_task_names.size(); i++) { 
+	reactions.push_back(hiqp_ros::TaskDoneReaction::NONE);
+	tolerances.push_back(grasp_task_tol);
+      }
+      
       current_r_frame=target_r_frame;
       current_l_frame=target_l_frame;
       target_obj_frame=current_obj_frame;
@@ -271,7 +227,7 @@ void ExpBalancing::expMainLoop() {
       std::list<tf::Transform> poses_obj = minJerkTraj(current_obj_frame, target_obj_frame, grasp_cont_dur, TF_PUBLISH_PERIOD);
       
       boost::mutex::scoped_lock lock(tf_pub_mutex);   
-
+      startNextBag("contact.bag");
       while(!poses_obj.empty() && !quit_demo) {
 	tf_pub_cond_.wait(lock);
 	//	std::cerr<<"pushing new poses, time: "<<ros::Time::now().toSec()<<std::endl;
@@ -286,6 +242,9 @@ void ExpBalancing::expMainLoop() {
       if(quit_demo) {
 	continue;
       }
+      
+      hiqp_client_->waitForCompletion(grasp_task_names, reactions, tolerances);
+      closeCurrentBag();
       ROS_INFO("Established contact.");
     }
     //---------------------------------------------------------------------------------------//    
@@ -296,6 +255,13 @@ void ExpBalancing::expMainLoop() {
 #endif
     ROS_INFO("TASK SET 5: moving to lift poses.");        
     {
+      reactions.clear();
+      tolerances.clear();
+      for(int i=0; i<grasp_task_names.size(); i++) { 
+	reactions.push_back(hiqp_ros::TaskDoneReaction::NONE);
+	tolerances.push_back(grasp_task_tol);
+      }
+      
       current_r_frame=target_r_frame;
       current_l_frame=target_l_frame;
       target_obj_frame=current_obj_frame;
@@ -313,7 +279,8 @@ void ExpBalancing::expMainLoop() {
       std::list<tf::Transform> poses_r = minJerkTraj(current_r_frame, target_r_frame, grasp_lift_dur, TF_PUBLISH_PERIOD);
       std::list<tf::Transform> poses_l = minJerkTraj(current_l_frame, target_l_frame, grasp_lift_dur, TF_PUBLISH_PERIOD);
       std::list<tf::Transform> poses_obj = minJerkTraj(current_obj_frame, target_obj_frame, grasp_lift_dur, TF_PUBLISH_PERIOD);
-      
+
+      startNextBag("lift.bag");
       boost::mutex::scoped_lock lock(tf_pub_mutex);   
 
       while(!poses_r.empty() && !poses_l.empty() && !quit_demo) {
@@ -330,7 +297,9 @@ void ExpBalancing::expMainLoop() {
       if(quit_demo) {
 	continue;
       }
-
+      
+      hiqp_client_->waitForCompletion(grasp_task_names, reactions, tolerances);
+      closeCurrentBag();
       ROS_INFO("Finished moving to lift poses.");
     }
 
@@ -374,14 +343,11 @@ void ExpBalancing::expMainLoop() {
       //generate the grasp poses from the object poses
       std::list<tf::Transform> poses_r, poses_l;
 
-
-
-      
       for (auto it = poses_obj.begin(); it != poses_obj.end(); ++it) {
 	poses_r.push_back((*it)*R_O_T);
 	poses_l.push_back((*it)*L_O_T);	
       }
-	 
+      startNextBag("balancing.bag");
       boost::mutex::scoped_lock lock(tf_pub_mutex);   
       while(!poses_obj.empty() && !quit_demo) {
 	tf_pub_cond_.wait(lock);
@@ -398,6 +364,8 @@ void ExpBalancing::expMainLoop() {
 	continue;
       }
 
+      hiqp_client_->waitForCompletion(grasp_task_names, reactions, tolerances);
+      closeCurrentBag();
       ROS_INFO("Finished balancing grasping task.");
     }
 
@@ -421,7 +389,7 @@ void ExpBalancing::expMainLoop() {
 
     }
 #endif
-    ROS_INFO("Quit Demo.");
+    ROS_INFO("Finished Experiment.");
   }
 
 }
@@ -676,17 +644,17 @@ void ExpBalancing::tf_pub_callback(const ros::TimerEvent &te) {
   // return true;
 }
 
-void ExpBalancing::marker_pub_callback(const ros::TimerEvent &te) {
+// void ExpBalancing::marker_pub_callback(const ros::TimerEvent &te) {
 
-  if(publish_markers) {
-    for(int i=0; i<current_markers.markers.size(); i++) {
-      current_markers.markers[i].header.stamp = ros::Time::now();
-      current_markers.markers[i].lifetime = ros::Duration(0.2);
-    }
-    marker_viz_pub_.publish(current_markers);
-  }
+//   if(publish_markers) {
+//     for(int i=0; i<current_markers.markers.size(); i++) {
+//       current_markers.markers[i].header.stamp = ros::Time::now();
+//       current_markers.markers[i].lifetime = ros::Duration(0.2);
+//     }
+//     marker_viz_pub_.publish(current_markers);
+//   }
 
-}
+// }
 	
 /// creates a folder for bags
 void ExpBalancing::setupNewExperiment() {
@@ -725,6 +693,14 @@ void ExpBalancing::closeCurrentBag() {
   bag_mutex.unlock();
 }
 
+void ExpBalancing::ts_callback(const wts_driver::Frame::ConstPtr& msg) {
+  bag_mutex.lock();
+  if(bag_is_open) {
+    current_bag.write(ts_r_topic, ros::Time::now(), msg);
+  }
+  bag_mutex.unlock();
+}
+
 void ExpBalancing::js_callback(const sensor_msgs::JointState::ConstPtr& msg) {
   bag_mutex.lock();
   if(bag_is_open) {
@@ -743,18 +719,18 @@ void ExpBalancing::tf_callback(const tf::tfMessage::ConstPtr& msg) {
 
 //---------------------------------------------------------------------
 
-void ExpBalancing::setPubMarkers(visualization_msgs::MarkerArray &markers) {
-  current_markers.markers.clear();
-  for(int i=0; i<markers.markers.size(); i++) {
-    current_markers.markers.push_back(markers.markers[i]);
-  }
-  publish_markers = true;
-}
+// void ExpBalancing::setPubMarkers(visualization_msgs::MarkerArray &markers) {
+//   current_markers.markers.clear();
+//   for(int i=0; i<markers.markers.size(); i++) {
+//     current_markers.markers.push_back(markers.markers[i]);
+//   }
+//   publish_markers = true;
+// }
 
-void ExpBalancing::stopPubMarkers() {
+// void ExpBalancing::stopPubMarkers() {
 
-  publish_markers = false;
-}
+//   publish_markers = false;
+// }
 
 void ExpBalancing::initializeDemo(){
   if(!loadPreGraspPoses())

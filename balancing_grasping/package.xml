@@ -55,7 +55,9 @@
   <build_depend>hiqp_ros</build_depend>
   <build_depend>hiqp_core</build_depend>
   <build_depend>rosbag</build_depend>
+  <build_depend>wts_driver</build_depend>
 
+  <run_depend>wts_driver</run_depend>
   <run_depend>hiqp_ros</run_depend>
   <run_depend>hiqp_core</run_depend>
   <run_depend>roscpp</run_depend>

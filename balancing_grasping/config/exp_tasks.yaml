@@ -76,37 +76,7 @@ grasp_tasks:
 #   def_params: ['TDefFullPose']
 #   dyn_params: ['TDynPD', '2.0', '3.0']
    
-#drop_assisted_tasks:
-# - name: drop_left_track
-#   priority: 2
-#   visible: true
-#   active: true
-#   def_params: ['TDefTracking', 'point', 'frame', 'teleop_gripper_point = teleop_left_frame', '0.04']
-#   dyn_params: ['TDynPD', '3.0', '4.0']
-# - name: auto_align_bin
-#   priority: 2
-#   visible: true
-#   active: true
-#   def_params: ['TDefGeomAlign', 'frame', 'cylinder', 'teleop_gripper_frame = bin_cylinder']
-#   dyn_params: ['TDynPD', '1.0', '2.0']
-# - name: teleop_left_track
-#   priority: 2
-#   visible: true
-#   active: true
-#   def_params: ['TDefTracking', 'frame', 'frame', 'teleop_gripper_frame = teleop_left_frame', '0.04']
-#   dyn_params: ['TDynPD', '1.0', '3.0']
-   
-#point_assisted_tasks:
-# - name: teleop_left_track
-#   priority: 2
-#   active: true
-#   def_params: ['TDefTracking', 'point', 'frame', 'teleop_gripper_point = teleop_left_frame', '0.04']
-#   dyn_params: ['TDynPD', '3.0', '4.0']
-# - name: auto_left_align
-#   priority: 2
-#   visible: true
-#   active: true
-#   def_params: ['TDefGeomAlign', 'frame', 'frame', 'target_frame = teleop_gripper_frame']
+
 #   dyn_params: ['TDynPD', '1.0', '2.0']
    
 joint_config_tasks:

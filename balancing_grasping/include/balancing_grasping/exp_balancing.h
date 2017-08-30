@@ -12,6 +12,7 @@
 #include <visualization_msgs/MarkerArray.h>
 
 #include <tf/tfMessage.h>
+#include <wts_driver/Frame.h>
 #include <sensor_msgs/JointState.h>
 
 #include <tf/transform_listener.h>
@@ -31,10 +32,10 @@ class ExpBalancing {
   
   //  ros::Subscriber grasp_left_sub_;
 
-  ros::Subscriber joint_state_sub_;
-  ros::Subscriber tf_sub_;
+  ros::Subscriber joint_state_sub_, ts_r_sub_, ts_l_sub_;
+  ros::Subscriber tf_sub_, tf_static_sub_;
 
-  ros::Publisher marker_viz_pub_;
+  //  ros::Publisher marker_viz_pub_;
   //ros::Publisher gripper_pub_;	
 
   ///Clients to other nodes
@@ -49,13 +50,13 @@ class ExpBalancing {
   tf::TransformListener tl;
   tf::TransformBroadcaster tb;
     
-  ros::Timer tf_pub_timer, marker_pub_timer;
+  ros::Timer tf_pub_timer;// marker_pub_timer;
 
   boost::mutex bools_mutex, bag_mutex, tf_pub_mutex;
   boost::condition_variable cond_;
   boost::condition_variable tf_pub_cond_;  
 
-  std::string js_topic, tf_topic;
+  std::string js_topic, tf_topic, tf_static_topic, ts_r_topic, ts_l_topic;
   std::string log_dir;
 
   double grasp_thresh, grasp_rand, alpha, joint_task_tol, pre_grasp_task_tol, grasp_task_tol, cont_lift, grasp_lift;
@@ -73,8 +74,8 @@ class ExpBalancing {
   
   //  size_t current_target_id;
 
-  bool publish_markers;
-  visualization_msgs::MarkerArray gripper_target, gripper_target_ass, object_ass, object_noass, current_markers;
+  // bool publish_markers;
+  // visualization_msgs::MarkerArray gripper_target, gripper_target_ass, object_ass, object_noass, current_markers;
   Eigen::Vector3d obj_pos, obj_axis, bin_pos, bin_axis;
   std::string obj_frame, bin_frame;
   ///for bagging
@@ -101,6 +102,7 @@ class ExpBalancing {
   void grasp_left_callback(const std_msgs::Float32::ConstPtr& msg);
   void js_callback(const sensor_msgs::JointState::ConstPtr& msg);
   void tf_callback(const tf::tfMessage::ConstPtr& msg);
+  void ts_callback(const wts_driver::Frame::ConstPtr& msg);  
 
   bool start_demo_callback(std_srvs::Empty::Request  &req,
 			   std_srvs::Empty::Response &res );
@@ -110,7 +112,7 @@ class ExpBalancing {
 			  std_srvs::Empty::Response &res );
 
   void tf_pub_callback(const ros::TimerEvent &te);
-  void marker_pub_callback(const ros::TimerEvent &te);
+  //  void marker_pub_callback(const ros::TimerEvent &te);
 
 
   /// helpers for tasks
@@ -136,8 +138,8 @@ class ExpBalancing {
   /* 			 std::string namespc, double rc, double g, */
   /* 			 double b); */
   
-  void setPubMarkers(visualization_msgs::MarkerArray &markers);
-  void stopPubMarkers();
+  //  void setPubMarkers(visualization_msgs::MarkerArray &markers);
+  //  void stopPubMarkers();
   
  public:
   ExpBalancing();

@@ -6,7 +6,15 @@
      <param name="frame_left" type="string" value="grasp_link"/>
      <param name="log_directory" value="$(find balancing_grasping)/log"/>
      <param name="robot_namespace" value="yumi"/>
-     <param name="grasp_acq_dur" value="4.0"/>
+     <param name="tf_topic" value="/tf"/>
+     <param name="tf_static_topic" value="/tf_static"/>
+     <param name="js_topic" value="/yumi/joint_states"/>
+     <param name="ts_r_topic" value="/sensor_1/frames"/>
+     <param name="ts_l_topic" value="/sensor_2/frames"/>
+     <param name="js_topic" value="/yumi/joint_states"/>
+     <param name="pre_grasp_task_tol" value="1e-4"/>
+     <param name="grasp_task_tol" value="1e-4"/>
+     <param name="grasp_acq_dur" value="3.0"/>
      <param name="grasp_cont_dur" value="2.0"/>
      <param name="grasp_lift_dur" value="3.0"/>
      <param name="grasp_task_dur" value="12.0"/>

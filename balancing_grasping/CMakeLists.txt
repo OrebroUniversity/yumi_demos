@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
     roscpp
     hiqp_ros 
     hiqp_core
+#    wts_driver
     std_srvs
     std_msgs rosbag
     hiqp_msgs tf tf_conversions eigen_conversions geometry_msgs cmake_modules visualization_msgs
