@@ -3,4 +3,5 @@
                                      "-I/home/rkg/ros/amici_ws/src/hiqp/hiqp_ros/include/"
                                      "-I/home/rkg/ros/amici_ws/devel/include/"
                                      "-I/opt/ros/kinetic/include"                                     
-                                     "-I/usr/include/eigen3/")))))
+                                     "-I/usr/include/eigen3/"
+                                     "-std=gnu++11")))))

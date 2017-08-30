@@ -27,7 +27,7 @@ class ExpBalancing {
  private:
   ros::NodeHandle nh_;
   ros::NodeHandle n_;
-  tf::Transform pre_grasp_r_frame, pre_grasp_l_frame;
+  tf::Transform pre_grasp_r_frame, pre_grasp_l_frame, current_obj_frame;
   
   //  ros::Subscriber grasp_left_sub_;
 
@@ -58,12 +58,12 @@ class ExpBalancing {
   std::string js_topic, tf_topic;
   std::string log_dir;
 
-  double grasp_thresh, joint_task_tol, pre_grasp_task_tol, grasp_task_tol;
+  double grasp_thresh, alpha, joint_task_tol, pre_grasp_task_tol, grasp_task_tol, cont_lift, grasp_lift;
   int num_pickups;
 
   bool  quit_demo, tf_published;
 
-  double grasp_thresh_tol, grasp_acq_dur, grasp_lift_dur, grasp_cont_dur;
+  double grasp_thresh_tol, grasp_acq_dur, grasp_task_dur, grasp_lift_dur, grasp_cont_dur;
   std::vector<hiqp_msgs::Task> pre_grasp_tasks, grasp_tasks, joint_tasks, teleop_tasks,
     pick_assisted_tasks, drop_assisted_tasks, point_assisted_tasks;
   std::vector<std::string> pre_grasp_task_names, grasp_task_names, joint_task_names, teleop_task_names,
@@ -85,7 +85,8 @@ class ExpBalancing {
   ///functions
 
   bool loadPreGraspPoses();
-  std::list<tf::Transform> minJerk(const tf::Transform& start_pose, const tf::Transform& end_pose, double T, double dt); 
+  std::list<tf::Transform> minJerkTraj(const tf::Transform& start_pose, const tf::Transform& end_pose, double T, double dt);
+  std::list<double> minJerkTraj(double start, double end, double T, double dt);
   
   double getDoubleTime() {
     struct timeval time;
@@ -116,7 +117,10 @@ class ExpBalancing {
   bool setTasks(std::vector<hiqp_msgs::Task> &next_tasks,
 		std::vector<std::string> &prev_task_names);
   //  bool waitForPoseAlignment();
-	
+  bool isLarger(double k){
+
+  };
+  
   /// creates a folder for bags
   void setupNewExperiment();
   /// starts recording the next bag
@@ -133,6 +137,7 @@ class ExpBalancing {
   
   void setPubMarkers(visualization_msgs::MarkerArray &markers);
   void stopPubMarkers();
+  
  public:
   ExpBalancing();
   void expMainLoop();

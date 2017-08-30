@@ -9,15 +9,17 @@
      <param name="grasp_acq_dur" value="4.0"/>
      <param name="grasp_cont_dur" value="2.0"/>
      <param name="grasp_lift_dur" value="3.0"/>
+     <param name="grasp_task_dur" value="12.0"/>
+     <param name="alpha" value="0.3"/> <!--object tilt angle during the swivel motion-->
+     <param name="cont_lift" value="0.01"/> <!--vertical travel to establish contact after moving to grasp poses-->
+     <param name="grasp_lift" value="0.05"/> <!--vertical travel after grasping-->
   </node>
-
 
   <!--  Hardware interfaces and controllers -->
   <arg name="controllers" default="joint_state_controller hiqp_joint_velocity_controller"/>
   <arg name="gripper_controllers" default="gripper_effort_pos_controller_r gripper_effort_pos_controller_l"/>
   <arg name="arms_hardware_interface" default="VelocityJointInterface"/>
   <arg name="grippers_hardware_interface" default="EffortJointInterface"/>
-
 
    <!-- Parameter server stuff -->
   <rosparam file="$(find balancing_grasping)/config/yumi_controllers.yaml" command="load"/>
@@ -43,7 +45,7 @@
   </include>
 
   <!-- URDF / SRDF parameters -->
-  <param name="robot_description" command="$(find xacro)/xacro.py '$(find yumi_description)/urdf/yumi.urdf.xacro' arms_interface:=$(arg arms_hardware_interface) grippers_interface:=$(arg grippers_hardware_interface)" />
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find balancing_grasping)/urdf/balancing_grasping.urdf.xacro' arms_interface:=$(arg arms_hardware_interface) grippers_interface:=$(arg grippers_hardware_interface)" />
   <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-urdf -model yumi -param robot_description"  respawn="false" output="screen" />
   
   <node name="arm_controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" args="$(arg controllers)" ns="/yumi"/>

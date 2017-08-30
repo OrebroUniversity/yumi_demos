@@ -23,6 +23,9 @@ ExpBalancing::ExpBalancing() {
   nh_.param<std::string>("log_directory",log_dir,"log");
 
   nh_.param<int>("num_pickups",num_pickups,2);
+  nh_.param("alpha", alpha,0.2);
+  nh_.param("cont_lift", cont_lift,0.005);
+  nh_.param("grasp_lift", grasp_lift,0.05);     
   nh_.param("grasp_threshold",grasp_thresh_tol,0.2); //0 to 1
   nh_.param("joint_task_tol",joint_task_tol,1e-2); //0 to 1
   nh_.param("pre_grasp_task_tol",pre_grasp_task_tol,1e-4); //0 to 1  
@@ -30,7 +33,8 @@ ExpBalancing::ExpBalancing() {
   nh_.param("grasp_acq_dur", grasp_acq_dur,3.0);
   nh_.param("grasp_lift_dur", grasp_lift_dur,3.0);
   nh_.param("grasp_cont_dur", grasp_cont_dur,2.0);  
-  
+  nh_.param("grasp_task_dur", grasp_task_dur,10.0);
+
   marker_viz_pub_ = nh_.advertise<visualization_msgs::MarkerArray> ("teleop_markers",10);
   //    gripper_pub_ = nh_.advertise<robotiq_85_msgs::GripperCmd> ("grasp_cmd",10);
 
@@ -61,11 +65,18 @@ ExpBalancing::ExpBalancing() {
 
   if(!loadPreGraspPoses())
     ROS_ERROR("Incorrect pre-grasp pose setup!");
+
+  current_obj_frame.setIdentity();
+  //assume that the object frame is centered in between the pre-grasp frames in y, has the same x value as either pre-grasp frame and a z value of pre-grasp + vertical contact lift travel
+  tf::Vector3 v(pre_grasp_r_frame.getOrigin().getX(),(pre_grasp_l_frame.getOrigin().getY()-pre_grasp_l_frame.getOrigin().getY())/2, pre_grasp_r_frame.getOrigin().getZ()+cont_lift);
+  current_obj_frame.setOrigin(v);
   
   //---- setup TF frames we want to publish ----//
   //
   target_poses.push_back(tf::StampedTransform(pre_grasp_r_frame, ros::Time::now(), "yumi_base_link", "grasp_r_frame"));
   target_poses.push_back(tf::StampedTransform(pre_grasp_l_frame, ros::Time::now(), "yumi_base_link", "grasp_l_frame"));
+  target_poses.push_back(tf::StampedTransform(current_obj_frame, ros::Time::now(), "yumi_base_link", "obj_frame"));
+
   
   //  current_target_id=-1;
   std::srand(std::time(0)); // use current time as seed for random generator
@@ -144,7 +155,7 @@ void ExpBalancing::expMainLoop() {
   std::vector<std::string> prev_tasks;  
   std::vector<hiqp_ros::TaskDoneReaction> reactions;
   std::vector<double> tolerances;
-  tf::Transform target_r_frame, target_l_frame, current_r_frame, current_l_frame;
+  tf::Transform target_r_frame, target_l_frame, target_obj_frame, current_r_frame, current_l_frame;
 
   while(true) {
     //each iteration of this loop is a new set of experiments
@@ -159,6 +170,7 @@ void ExpBalancing::expMainLoop() {
     }
     //    next_task = true;
     cond_.notify_one();
+    #if 0
     //---------------------------------------------------------------------------------------//	
     ROS_INFO("TASK SET 1: Moving to init joint configuration.");
     {
@@ -174,10 +186,10 @@ void ExpBalancing::expMainLoop() {
       // 	cond_.wait(lock);
       // }
       // if(quit_demo) {
-	//reset variables and so on
+      //reset variables and so on
       //	continue;
-	//}
-	hiqp_client_->setTasks(joint_tasks);
+      //}
+      hiqp_client_->setTasks(joint_tasks);
     }
 	
     hiqp_client_->waitForCompletion(joint_task_names, reactions, tolerances);
@@ -201,7 +213,7 @@ void ExpBalancing::expMainLoop() {
       // 	continue;
       // }
 
-	hiqp_client_->setTasks(pre_grasp_tasks);
+      hiqp_client_->setTasks(pre_grasp_tasks);
 
     }
 	
@@ -214,7 +226,8 @@ void ExpBalancing::expMainLoop() {
       current_l_frame=pre_grasp_l_frame;
       target_r_frame=current_r_frame;
       target_l_frame=current_l_frame;
-    
+      target_obj_frame=current_obj_frame;
+      
       //HACK: should randomize x/y pose of the grasp target frames    
       tf::Vector3 v=current_r_frame.getOrigin();
       v.setY(-0.1);
@@ -224,22 +237,24 @@ void ExpBalancing::expMainLoop() {
       target_l_frame.setOrigin(v);
 
    
-      std::list<tf::Transform> poses_r = minJerk(current_r_frame, target_r_frame, grasp_acq_dur, TF_PUBLISH_PERIOD);
-      std::list<tf::Transform> poses_l = minJerk(current_l_frame, target_l_frame, grasp_acq_dur, TF_PUBLISH_PERIOD);
-
+      std::list<tf::Transform> poses_r = minJerkTraj(current_r_frame, target_r_frame, grasp_acq_dur, TF_PUBLISH_PERIOD);
+      std::list<tf::Transform> poses_l = minJerkTraj(current_l_frame, target_l_frame, grasp_acq_dur, TF_PUBLISH_PERIOD);
+      std::list<tf::Transform> poses_obj = minJerkTraj(current_obj_frame, target_obj_frame, grasp_acq_dur, TF_PUBLISH_PERIOD);
       prev_tasks.clear();
       setTasks(grasp_tasks, prev_tasks );
       boost::mutex::scoped_lock lock(tf_pub_mutex);   
 
       tf_published=false;
-      while(!poses_r.empty() && !poses_l.empty() && !quit_demo) {
+      while(!poses_obj.empty() && !quit_demo) {
 	tf_pub_cond_.wait(lock);
 
 	target_poses.clear();
 	target_poses.push_back(tf::StampedTransform(poses_r.front(),ros::Time::now(),"yumi_base_link","grasp_r_frame"));
 	target_poses.push_back(tf::StampedTransform(poses_l.front(),ros::Time::now(),"yumi_base_link","grasp_l_frame"));
+	target_poses.push_back(tf::StampedTransform(poses_obj.front(),ros::Time::now(),"yumi_base_link","obj_frame"));	
 	poses_r.pop_front();
 	poses_l.pop_front();
+	poses_obj.pop_front();
       }
       if(quit_demo) {
 	continue;
@@ -251,27 +266,32 @@ void ExpBalancing::expMainLoop() {
     ROS_INFO("TASK SET 4: Establishing contact.");        
     {
       current_r_frame=target_r_frame;
-      current_l_frame=target_l_frame;    
+      current_l_frame=target_l_frame;
+      target_obj_frame=current_obj_frame;
+      
       tf::Vector3 v=current_r_frame.getOrigin();
-      v.setZ(v.getZ()+0.01);
+      v.setZ(v.getZ()+cont_lift);
       target_r_frame.setOrigin(v);
       v=current_l_frame.getOrigin();
-      v.setZ(v.getZ()+0.01);
+      v.setZ(v.getZ()+cont_lift);
       target_l_frame.setOrigin(v);
 
-      std::list<tf::Transform> poses_r = minJerk(current_r_frame, target_r_frame, grasp_cont_dur, TF_PUBLISH_PERIOD);
-      std::list<tf::Transform> poses_l = minJerk(current_l_frame, target_l_frame, grasp_cont_dur, TF_PUBLISH_PERIOD);
-
+      std::list<tf::Transform> poses_r = minJerkTraj(current_r_frame, target_r_frame, grasp_cont_dur, TF_PUBLISH_PERIOD);
+      std::list<tf::Transform> poses_l = minJerkTraj(current_l_frame, target_l_frame, grasp_cont_dur, TF_PUBLISH_PERIOD);
+      std::list<tf::Transform> poses_obj = minJerkTraj(current_obj_frame, target_obj_frame, grasp_cont_dur, TF_PUBLISH_PERIOD);
+      
       boost::mutex::scoped_lock lock(tf_pub_mutex);   
 
-      while(!poses_r.empty() && !poses_l.empty() && !quit_demo) {
+      while(!poses_obj.empty() && !quit_demo) {
 	tf_pub_cond_.wait(lock);
 	//	std::cerr<<"pushing new poses, time: "<<ros::Time::now().toSec()<<std::endl;
 	target_poses.clear();
 	target_poses.push_back(tf::StampedTransform(poses_r.front(),ros::Time::now(),"yumi_base_link","grasp_r_frame"));
 	target_poses.push_back(tf::StampedTransform(poses_l.front(),ros::Time::now(),"yumi_base_link","grasp_l_frame"));
+	target_poses.push_back(tf::StampedTransform(poses_obj.front(),ros::Time::now(),"yumi_base_link","obj_frame"));		
 	poses_r.pop_front();
 	poses_l.pop_front();
+	poses_obj.pop_front();
       }
       if(quit_demo) {
 	continue;
@@ -279,20 +299,27 @@ void ExpBalancing::expMainLoop() {
       ROS_INFO("Established contact.");
     }
     //---------------------------------------------------------------------------------------//
+#endif
     ROS_INFO("TASK SET 5: moving to lift poses.");        
     {
       current_r_frame=target_r_frame;
-      current_l_frame=target_l_frame;    
+      current_l_frame=target_l_frame;
+      target_obj_frame=current_obj_frame;
+      
       tf::Vector3 v=current_r_frame.getOrigin();
-      v.setZ(v.getZ()+0.05);
+      v.setZ(v.getZ()+grasp_lift);
       target_r_frame.setOrigin(v);
       v=current_l_frame.getOrigin();
-      v.setZ(v.getZ()+0.05);
+      v.setZ(v.getZ()+grasp_lift);
       target_l_frame.setOrigin(v);
+      v=current_obj_frame.getOrigin();
+      v.setZ(v.getZ()+grasp_lift);
+      target_obj_frame.setOrigin(v);
 
-      std::list<tf::Transform> poses_r = minJerk(current_r_frame, target_r_frame, grasp_lift_dur, TF_PUBLISH_PERIOD);
-      std::list<tf::Transform> poses_l = minJerk(current_l_frame, target_l_frame, grasp_lift_dur, TF_PUBLISH_PERIOD);
-
+      std::list<tf::Transform> poses_r = minJerkTraj(current_r_frame, target_r_frame, grasp_lift_dur, TF_PUBLISH_PERIOD);
+      std::list<tf::Transform> poses_l = minJerkTraj(current_l_frame, target_l_frame, grasp_lift_dur, TF_PUBLISH_PERIOD);
+      std::list<tf::Transform> poses_obj = minJerkTraj(current_obj_frame, target_obj_frame, grasp_lift_dur, TF_PUBLISH_PERIOD);
+      
       boost::mutex::scoped_lock lock(tf_pub_mutex);   
 
       while(!poses_r.empty() && !poses_l.empty() && !quit_demo) {
@@ -301,6 +328,7 @@ void ExpBalancing::expMainLoop() {
 	target_poses.clear();
 	target_poses.push_back(tf::StampedTransform(poses_r.front(),ros::Time::now(),"yumi_base_link","grasp_r_frame"));
 	target_poses.push_back(tf::StampedTransform(poses_l.front(),ros::Time::now(),"yumi_base_link","grasp_l_frame"));
+	target_poses.push_back(tf::StampedTransform(poses_obj.front(),ros::Time::now(),"yumi_base_link","obj_frame"));			 poses_obj.pop_front();
 	poses_r.pop_front();
 	poses_l.pop_front();
       }
@@ -310,6 +338,61 @@ void ExpBalancing::expMainLoop() {
 
       ROS_INFO("Finished moving to lift poses.");
     }
+
+    //---------------------------------------------------------------------------------------//
+    ROS_INFO("TASK SET 6: Starting balancing grasping task.");        
+    {
+      current_obj_frame=target_obj_frame;
+      tf::Transform   L_O_T, R_O_T;
+
+      //the target frame is tilted by -alpha around the x axis 
+      tf::Transform target_obj_frame = current_obj_frame;
+      Eigen::Quaterniond q(Eigen::Matrix3d(Eigen::AngleAxisd(-alpha, Eigen::Vector3d::UnitX())));
+      target_obj_frame.setRotation(tf::Quaternion(q.x(), q.y(), q.z(), q.w()));
+
+      //split the duration for 1/6 of the tilt motion and 5/6 for the swivel motion      
+      std::list<tf::Transform> poses_obj = minJerkTraj(current_obj_frame, target_obj_frame, grasp_task_dur/6, TF_PUBLISH_PERIOD);
+
+      current_obj_frame=target_obj_frame;
+      q=Eigen::Quaterniond(Eigen::Matrix3d(Eigen::AngleAxisd(alpha, Eigen::Vector3d::UnitY())));
+      target_obj_frame.setRotation(tf::Quaternion(q.x(), q.y(), q.z(), q.w()));
+      std::list<tf::Transform> poses_tmp = minJerkTraj(current_obj_frame, target_obj_frame, grasp_task_dur/6, TF_PUBLISH_PERIOD);
+      poses_obj.splice(poses_obj.end(), poses_tmp);
+
+      current_obj_frame=target_obj_frame;
+      q=Eigen::Quaterniond(Eigen::Matrix3d(Eigen::AngleAxisd(alpha, Eigen::Vector3d::UnitX())));
+      target_obj_frame.setRotation(tf::Quaternion(q.x(), q.y(), q.z(), q.w()));
+      poses_tmp = minJerkTraj(current_obj_frame, target_obj_frame, grasp_task_dur/6, TF_PUBLISH_PERIOD);
+      poses_obj.splice(poses_obj.end(), poses_tmp);
+
+      current_obj_frame=target_obj_frame;
+      q=Eigen::Quaterniond(Eigen::Matrix3d(Eigen::AngleAxisd(-alpha, Eigen::Vector3d::UnitY())));
+      target_obj_frame.setRotation(tf::Quaternion(q.x(), q.y(), q.z(), q.w()));
+      poses_tmp = minJerkTraj(current_obj_frame, target_obj_frame, grasp_task_dur/6, TF_PUBLISH_PERIOD);
+      poses_obj.splice(poses_obj.end(), poses_tmp);
+      
+      current_obj_frame=target_obj_frame;
+      tf::Matrix3x3 R; R.setIdentity();
+      target_obj_frame.setBasis(R);    
+      poses_tmp = minJerkTraj(current_obj_frame, target_obj_frame, grasp_task_dur/6, TF_PUBLISH_PERIOD);   
+      poses_obj.splice(poses_obj.end(), poses_tmp);
+       
+      boost::mutex::scoped_lock lock(tf_pub_mutex);   
+      while(!poses_obj.empty() && !quit_demo) {
+	tf_pub_cond_.wait(lock);
+
+	target_poses.clear();
+	target_poses.push_back(tf::StampedTransform(poses_obj.front(),ros::Time::now(),"yumi_base_link","obj_frame"));
+	poses_obj.pop_front();
+
+      }
+      if(quit_demo) {
+	continue;
+      }
+
+      ROS_INFO("Finished balancing grasping task.");
+    }
+
     //---------------------------------------------------------------------------------------//	
     //quitting
     {	    
@@ -350,7 +433,7 @@ bool ExpBalancing::setTasks(std::vector<hiqp_msgs::Task> &next_tasks,
     return false;
   }
 
-    hiqp_client_->setTasks(next_tasks);
+  hiqp_client_->setTasks(next_tasks);
 
   return true;
 }
@@ -679,7 +762,18 @@ void ExpBalancing::stopPubMarkers() {
   publish_markers = false;
 }
 
-std::list<tf::Transform> ExpBalancing::minJerk(const tf::Transform& start_pose, const tf::Transform& end_pose, double T, double dt){
+std::list<double> ExpBalancing::minJerkTraj(double start, double end, double T, double dt){
+  std::list<double> traj;
+  ROS_ASSERT(dt > 0.0 && T > dt);
+  double t=0;
+  for(unsigned int i=0; i<ceil(T/dt)+1; i++){
+    traj.push_back(start+(end-start)*(10*pow(t/T,3)-15*pow(t/T,4)+6*pow(t/T,5)));
+    t+=dt;    
+  }
+  return traj;
+}
+
+std::list<tf::Transform> ExpBalancing::minJerkTraj(const tf::Transform& start_pose, const tf::Transform& end_pose, double T, double dt){
   std::list<tf::Transform> poses;
   ROS_ASSERT(dt > 0.0 && T > dt);
 
