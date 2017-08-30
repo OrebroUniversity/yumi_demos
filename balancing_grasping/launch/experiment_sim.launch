@@ -10,6 +10,7 @@
      <param name="grasp_cont_dur" value="2.0"/>
      <param name="grasp_lift_dur" value="3.0"/>
      <param name="grasp_task_dur" value="12.0"/>
+     <param name="grasp_rand" value="0.08"/> <!-- the two grasp poses are randomized along the world x direction within an interval given by this value -->
      <param name="alpha" value="0.3"/> <!--object tilt angle during the swivel motion-->
      <param name="cont_lift" value="0.01"/> <!--vertical travel to establish contact after moving to grasp poses-->
      <param name="grasp_lift" value="0.05"/> <!--vertical travel after grasping-->

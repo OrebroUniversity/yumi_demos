@@ -25,7 +25,8 @@ ExpBalancing::ExpBalancing() {
   nh_.param<int>("num_pickups",num_pickups,2);
   nh_.param("alpha", alpha,0.2);
   nh_.param("cont_lift", cont_lift,0.005);
-  nh_.param("grasp_lift", grasp_lift,0.05);     
+  nh_.param("grasp_lift", grasp_lift,0.05);
+  nh_.param("grasp_rand", grasp_rand,0.08);         
   nh_.param("grasp_threshold",grasp_thresh_tol,0.2); //0 to 1
   nh_.param("joint_task_tol",joint_task_tol,1e-2); //0 to 1
   nh_.param("pre_grasp_task_tol",pre_grasp_task_tol,1e-4); //0 to 1  
@@ -63,21 +64,6 @@ ExpBalancing::ExpBalancing() {
   // loadTasksFromParamServer("drop_assisted_tasks", drop_assisted_tasks, drop_assisted_task_names);
   // loadTasksFromParamServer("point_assisted_tasks", point_assisted_tasks, point_assisted_task_names);
 
-  if(!loadPreGraspPoses())
-    ROS_ERROR("Incorrect pre-grasp pose setup!");
-
-  current_obj_frame.setIdentity();
-  //assume that the object frame is centered in between the pre-grasp frames in y, has the same x value as either pre-grasp frame and a z value of pre-grasp + vertical contact lift travel
-  tf::Vector3 v(pre_grasp_r_frame.getOrigin().getX(),(pre_grasp_l_frame.getOrigin().getY()-pre_grasp_l_frame.getOrigin().getY())/2, pre_grasp_r_frame.getOrigin().getZ()+cont_lift);
-  current_obj_frame.setOrigin(v);
-  
-  //---- setup TF frames we want to publish ----//
-  //
-  target_poses.push_back(tf::StampedTransform(pre_grasp_r_frame, ros::Time::now(), "yumi_base_link", "grasp_r_frame"));
-  target_poses.push_back(tf::StampedTransform(pre_grasp_l_frame, ros::Time::now(), "yumi_base_link", "grasp_l_frame"));
-  target_poses.push_back(tf::StampedTransform(current_obj_frame, ros::Time::now(), "yumi_base_link", "obj_frame"));
-
-  
   //  current_target_id=-1;
   std::srand(std::time(0)); // use current time as seed for random generator
   bag_is_open = false;
@@ -155,7 +141,7 @@ void ExpBalancing::expMainLoop() {
   std::vector<std::string> prev_tasks;  
   std::vector<hiqp_ros::TaskDoneReaction> reactions;
   std::vector<double> tolerances;
-  tf::Transform target_r_frame, target_l_frame, target_obj_frame, current_r_frame, current_l_frame;
+  tf::Transform L_O_T, R_O_T, target_r_frame, target_l_frame, target_obj_frame, current_r_frame, current_l_frame;
 
   while(true) {
     //each iteration of this loop is a new set of experiments
@@ -170,7 +156,8 @@ void ExpBalancing::expMainLoop() {
     }
     //    next_task = true;
     cond_.notify_one();
-    #if 0
+    hiqp_client_->removeTasks(grasp_task_names);
+    #if 1
     //---------------------------------------------------------------------------------------//	
     ROS_INFO("TASK SET 1: Moving to init joint configuration.");
     {
@@ -228,12 +215,15 @@ void ExpBalancing::expMainLoop() {
       target_l_frame=current_l_frame;
       target_obj_frame=current_obj_frame;
       
-      //HACK: should randomize x/y pose of the grasp target frames    
+      //randomize the pose of the grasp target frames along the world x axis
       tf::Vector3 v=current_r_frame.getOrigin();
+
       v.setY(-0.1);
+      v.setX(v.getX()+randomNumber(-grasp_rand/2, grasp_rand/2));
       target_r_frame.setOrigin(v);
       v=current_l_frame.getOrigin();
-      v.setY(0.1);
+      v.setY(0.1);      
+      v.setX(v.getX()+randomNumber(-grasp_rand/2, grasp_rand/2));
       target_l_frame.setOrigin(v);
 
    
@@ -298,6 +288,10 @@ void ExpBalancing::expMainLoop() {
       }
       ROS_INFO("Established contact.");
     }
+    //---------------------------------------------------------------------------------------//    
+    //Compute the grasp poses in the object frame
+    R_O_T=target_obj_frame.inverse()*target_r_frame;
+    L_O_T=target_obj_frame.inverse()*target_l_frame;    
     //---------------------------------------------------------------------------------------//
 #endif
     ROS_INFO("TASK SET 5: moving to lift poses.");        
@@ -328,7 +322,8 @@ void ExpBalancing::expMainLoop() {
 	target_poses.clear();
 	target_poses.push_back(tf::StampedTransform(poses_r.front(),ros::Time::now(),"yumi_base_link","grasp_r_frame"));
 	target_poses.push_back(tf::StampedTransform(poses_l.front(),ros::Time::now(),"yumi_base_link","grasp_l_frame"));
-	target_poses.push_back(tf::StampedTransform(poses_obj.front(),ros::Time::now(),"yumi_base_link","obj_frame"));			 poses_obj.pop_front();
+	target_poses.push_back(tf::StampedTransform(poses_obj.front(),ros::Time::now(),"yumi_base_link","obj_frame"));
+	poses_obj.pop_front();
 	poses_r.pop_front();
 	poses_l.pop_front();
       }
@@ -343,8 +338,7 @@ void ExpBalancing::expMainLoop() {
     ROS_INFO("TASK SET 6: Starting balancing grasping task.");        
     {
       current_obj_frame=target_obj_frame;
-      tf::Transform   L_O_T, R_O_T;
-
+      
       //the target frame is tilted by -alpha around the x axis 
       tf::Transform target_obj_frame = current_obj_frame;
       Eigen::Quaterniond q(Eigen::Matrix3d(Eigen::AngleAxisd(-alpha, Eigen::Vector3d::UnitX())));
@@ -376,14 +370,28 @@ void ExpBalancing::expMainLoop() {
       target_obj_frame.setBasis(R);    
       poses_tmp = minJerkTraj(current_obj_frame, target_obj_frame, grasp_task_dur/6, TF_PUBLISH_PERIOD);   
       poses_obj.splice(poses_obj.end(), poses_tmp);
-       
+
+      //generate the grasp poses from the object poses
+      std::list<tf::Transform> poses_r, poses_l;
+
+
+
+      
+      for (auto it = poses_obj.begin(); it != poses_obj.end(); ++it) {
+	poses_r.push_back((*it)*R_O_T);
+	poses_l.push_back((*it)*L_O_T);	
+      }
+	 
       boost::mutex::scoped_lock lock(tf_pub_mutex);   
       while(!poses_obj.empty() && !quit_demo) {
 	tf_pub_cond_.wait(lock);
-
 	target_poses.clear();
+	target_poses.push_back(tf::StampedTransform(poses_r.front(),ros::Time::now(),"yumi_base_link","grasp_r_frame"));
+	target_poses.push_back(tf::StampedTransform(poses_l.front(),ros::Time::now(),"yumi_base_link","grasp_l_frame"));
 	target_poses.push_back(tf::StampedTransform(poses_obj.front(),ros::Time::now(),"yumi_base_link","obj_frame"));
 	poses_obj.pop_front();
+	poses_r.pop_front();
+	poses_l.pop_front();
 
       }
       if(quit_demo) {
@@ -409,7 +417,7 @@ void ExpBalancing::expMainLoop() {
       // }
 
       //remove previous tasks
-      hiqp_client_->removeTasks(grasp_task_names);
+      //  hiqp_client_->removeTasks(grasp_task_names);
 
     }
 #endif
@@ -437,20 +445,6 @@ bool ExpBalancing::setTasks(std::vector<hiqp_msgs::Task> &next_tasks,
 
   return true;
 }
-
-// bool ExpBalancing::waitForPoseAlignment() {
-    
-//   boost::mutex::scoped_lock lock(bools_mutex);
-//   while(!next_task && !quit_demo) {
-//     cond_.wait(lock);
-//   }
-//   if(quit_demo) {
-//     //reset variables and so on
-//     return false;
-//   }
-//   next_task = false;
-//   return true;
-// }
 
 bool ExpBalancing::loadPreGraspPoses(){
   XmlRpc::XmlRpcValue hiqp_grasping_geometric_primitives;
@@ -490,7 +484,7 @@ bool ExpBalancing::loadPreGraspPoses(){
 
 bool ExpBalancing::start_demo_callback(std_srvs::Empty::Request  &req,
 				       std_srvs::Empty::Response &res ) {
-
+  initializeDemo();
 
   //HERE setup loggers and demo run id
   setupNewExperiment();
@@ -762,15 +756,20 @@ void ExpBalancing::stopPubMarkers() {
   publish_markers = false;
 }
 
-std::list<double> ExpBalancing::minJerkTraj(double start, double end, double T, double dt){
-  std::list<double> traj;
-  ROS_ASSERT(dt > 0.0 && T > dt);
-  double t=0;
-  for(unsigned int i=0; i<ceil(T/dt)+1; i++){
-    traj.push_back(start+(end-start)*(10*pow(t/T,3)-15*pow(t/T,4)+6*pow(t/T,5)));
-    t+=dt;    
-  }
-  return traj;
+void ExpBalancing::initializeDemo(){
+  if(!loadPreGraspPoses())
+    ROS_ERROR("Incorrect pre-grasp pose setup!");
+
+  current_obj_frame.setIdentity();
+  //assume that the object frame is centered in between the pre-grasp frames in y, has the same x value as either pre-grasp frame and a z value of pre-grasp + vertical contact lift travel
+  tf::Vector3 v(pre_grasp_r_frame.getOrigin().getX(),(pre_grasp_l_frame.getOrigin().getY()-pre_grasp_l_frame.getOrigin().getY())/2, pre_grasp_r_frame.getOrigin().getZ()+cont_lift);
+  current_obj_frame.setOrigin(v);
+  
+  //---- setup TF frames we want to publish ----//
+  //
+  target_poses.push_back(tf::StampedTransform(pre_grasp_r_frame, ros::Time::now(), "yumi_base_link", "grasp_r_frame"));
+  target_poses.push_back(tf::StampedTransform(pre_grasp_l_frame, ros::Time::now(), "yumi_base_link", "grasp_l_frame"));
+  target_poses.push_back(tf::StampedTransform(current_obj_frame, ros::Time::now(), "yumi_base_link", "obj_frame"));
 }
 
 std::list<tf::Transform> ExpBalancing::minJerkTraj(const tf::Transform& start_pose, const tf::Transform& end_pose, double T, double dt){
@@ -792,43 +791,6 @@ std::list<tf::Transform> ExpBalancing::minJerkTraj(const tf::Transform& start_po
   }
   return poses;
 }
-
-// void ExpBalancing::addCylinderMarker(visualization_msgs::MarkerArray &markers,
-// 				     Eigen::Vector3d p, Eigen::Vector3d v,
-// 				     double r, std::string frame_, double h,
-// 				     std::string namespc, double rc, double gc,
-// 				     double bc) {
-
-//   Eigen::Quaterniond q;
-
-//   // transformation which points z in the cylinder direction
-//   q.setFromTwoVectors(Eigen::Vector3d::UnitZ(), v);
-
-//   visualization_msgs::Marker marker;
-//   marker.ns = namespc;
-//   marker.header.frame_id = frame_;
-//   marker.header.stamp = ros::Time::now();
-//   marker.type = visualization_msgs::Marker::CYLINDER;
-//   marker.action = visualization_msgs::Marker::ADD;
-//   marker.lifetime = ros::Duration(0.2);
-//   marker.id = markers.markers.size();
-//   marker.pose.position.x = p(0) + v(0) * 0.5 * h;  // LINE_SCALE;
-//   marker.pose.position.y = p(1) + v(1) * 0.5 * h;  // LINE_SCALE;
-//   marker.pose.position.z = p(2) + v(2) * 0.5 * h;
-//   marker.pose.orientation.x = q.x();
-//   marker.pose.orientation.y = q.y();
-//   marker.pose.orientation.z = q.z();
-//   marker.pose.orientation.w = q.w();
-//   marker.scale.x = 2 * r;
-//   marker.scale.y = 2 * r;
-//   marker.scale.z = h;
-//   marker.color.r = rc;
-//   marker.color.g = gc;
-//   marker.color.b = bc;
-//   marker.color.a = 0.1;
-//   markers.markers.push_back(marker);
-// }
-
 
 int main(int argc, char **argv)
 {

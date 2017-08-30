@@ -58,7 +58,7 @@ class ExpBalancing {
   std::string js_topic, tf_topic;
   std::string log_dir;
 
-  double grasp_thresh, alpha, joint_task_tol, pre_grasp_task_tol, grasp_task_tol, cont_lift, grasp_lift;
+  double grasp_thresh, grasp_rand, alpha, joint_task_tol, pre_grasp_task_tol, grasp_task_tol, cont_lift, grasp_lift;
   int num_pickups;
 
   bool  quit_demo, tf_published;
@@ -86,7 +86,6 @@ class ExpBalancing {
 
   bool loadPreGraspPoses();
   std::list<tf::Transform> minJerkTraj(const tf::Transform& start_pose, const tf::Transform& end_pose, double T, double dt);
-  std::list<double> minJerkTraj(double start, double end, double T, double dt);
   
   double getDoubleTime() {
     struct timeval time;
@@ -94,6 +93,7 @@ class ExpBalancing {
     return time.tv_sec + time.tv_usec * 1e-6; 
   }
 
+  void initializeDemo();
   void loadGeometricPrimitivesFromParamServer();
   bool loadTasksFromParamServer(std::string task_group_name, 
 				std::vector<hiqp_msgs::Task> &tasks_out, std::vector<std::string> &task_names_out);
@@ -116,9 +116,10 @@ class ExpBalancing {
   /// helpers for tasks
   bool setTasks(std::vector<hiqp_msgs::Task> &next_tasks,
 		std::vector<std::string> &prev_task_names);
-  //  bool waitForPoseAlignment();
-  bool isLarger(double k){
 
+  double randomNumber(double min, double max)
+  {
+    return ((double(rand()) / double(RAND_MAX)) * (max - min)) + min;
   };
   
   /// creates a folder for bags
