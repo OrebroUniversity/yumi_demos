@@ -3,7 +3,7 @@
 #include <string>   // std::string
 #include <sys/stat.h>
 #include <sys/types.h>
-
+#include <std_msgs/UInt16MultiArray.h>
 #include <xmlrpcpp/XmlRpcException.h>
 #include <xmlrpcpp/XmlRpcValue.h>
 
@@ -48,8 +48,8 @@ ExpBalancing::ExpBalancing() {
 
   //  grasp_left_sub_ = n_.subscribe(gleft_topic, 1,
   //  &ExpBalancing::grasp_left_callback, this);
-  ts_r_sub_ = n_.subscribe(ts_r_topic, 1, &ExpBalancing::ts_callback, this);
-  ts_l_sub_ = n_.subscribe(ts_l_topic, 1, &ExpBalancing::ts_callback, this);
+  ts_r_sub_ = n_.subscribe(ts_r_topic, 1, &ExpBalancing::ts_r_callback, this);
+  ts_l_sub_ = n_.subscribe(ts_l_topic, 1, &ExpBalancing::ts_l_callback, this);
   joint_state_sub_ =
       n_.subscribe(js_topic, 1, &ExpBalancing::js_callback, this);
   tf_sub_ = n_.subscribe(tf_topic, 1, &ExpBalancing::tf_callback, this);
@@ -190,6 +190,7 @@ void ExpBalancing::expMainLoop() {
 
       //randomize orientations around world z
       double roll, pitch, yaw;
+      tf::Matrix3x3 R;
       target_r_frame.getBasis().getRPY(roll, pitch, yaw);
       R.setRPY(roll, pitch, yaw+randomNumber(-theta_rand / 2, theta_rand / 2));           
       target_r_frame.setBasis(R);
@@ -788,10 +789,22 @@ void ExpBalancing::closeCurrentBag() {
   bag_mutex.unlock();
 }
 
-void ExpBalancing::ts_callback(const wts_driver::Frame::ConstPtr &msg) {
+void ExpBalancing::ts_r_callback(const wts_driver::Frame::ConstPtr &msg) {
   bag_mutex.lock();
   if (bag_is_open) {
-    current_bag.write(ts_r_topic, ros::Time::now(), msg);
+    std_msgs::UInt16MultiArray readings;
+    readings.data=msg->data;
+    current_bag.write("/ts_r", ros::Time::now(), readings);
+  }
+  bag_mutex.unlock();
+}
+
+void ExpBalancing::ts_l_callback(const wts_driver::Frame::ConstPtr &msg) {
+  bag_mutex.lock();
+  if (bag_is_open) {
+    std_msgs::UInt16MultiArray readings;    
+    readings.data=msg->data;
+    current_bag.write("/ts_l", ros::Time::now(), readings);
   }
   bag_mutex.unlock();
 }

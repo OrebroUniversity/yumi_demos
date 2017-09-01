@@ -102,8 +102,9 @@ class ExpBalancing {
   void grasp_left_callback(const std_msgs::Float32::ConstPtr& msg);
   void js_callback(const sensor_msgs::JointState::ConstPtr& msg);
   void tf_callback(const tf::tfMessage::ConstPtr& msg);
-  void ts_callback(const wts_driver::Frame::ConstPtr& msg);  
-
+  void ts_r_callback(const wts_driver::Frame::ConstPtr& msg);  
+  void ts_l_callback(const wts_driver::Frame::ConstPtr& msg);
+  
   bool start_demo_callback(std_srvs::Empty::Request  &req,
 			   std_srvs::Empty::Response &res );
   //  bool next_task_callback(std_srvs::Empty::Request  &req,
