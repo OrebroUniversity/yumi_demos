@@ -59,7 +59,7 @@ class ExpBalancing {
   std::string js_topic, tf_topic, tf_static_topic, ts_r_topic, ts_l_topic;
   std::string log_dir;
 
-  double grasp_thresh, grasp_rand, alpha, joint_task_tol, pre_grasp_task_tol, grasp_task_tol, cont_lift, grasp_lift;
+  double grasp_thresh, grasp_rand, theta_rand, alpha, joint_task_tol, pre_grasp_task_tol, grasp_task_tol, cont_lift, grasp_lift;
   int num_pickups;
 
   bool  quit_demo, tf_published;

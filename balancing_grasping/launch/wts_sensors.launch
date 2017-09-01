@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<launch>
+  <node name="wts_node_0" type="wts_driver_node" pkg="wts_driver" args="/dev/ttyACM0"/>
+  <node name="wts_node_1" type="wts_driver_node" pkg="wts_driver" args="/dev/ttyACM1"/>
+</launch>
