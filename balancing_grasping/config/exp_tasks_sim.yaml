@@ -85,7 +85,7 @@ joint_config_tasks:
    visible: true
    active: true
    monitored: true
-   def_params: ['TDefFullPose', '-0.5', '-1.4', '1.7', '-0.7', '0.0', '1.7', '1.0', '0.5', '-1.4', '-1.7', '-0.7', '0.0', '1.7', '-1.0']
+   def_params: ['TDefFullPose', '-1.0', '-1.4', '1.7', '-0.2', '0.0', '1.0', '1.0', '1.0', '-1.4', '-1.7', '-0.2', '0.0', '1.0', '-1.0']
    dyn_params: ['TDynPD', '2.0', '3.0']
 
 neutral_config_tasks:
@@ -94,5 +94,5 @@ neutral_config_tasks:
    visible: true
    active: true
    monitored: true
-   def_params: ['TDefFullPose']
+   def_params: ['TDefFullPose', '-1.0', '-1.4', '1.7', '-0.2', '0.0', '1.0', '1.0', '1.0', '-1.4', '-1.7', '-0.2', '0.0', '1.0', '-1.0']
    dyn_params: ['TDynPD', '2.0', '3.0']
