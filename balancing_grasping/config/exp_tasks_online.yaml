@@ -33,7 +33,7 @@ pre_grasp_tasks:
    active: true
    monitored: true
    def_params: ['TDefTracking', 'frame', 'frame', 'gripper_r_frame = pre_grasp_r_frame', '0.1']
-   dyn_params: ['TDynPD', '0.05', '0.5']
+   dyn_params: ['TDynPD', '1.0', '2.0']
 #   def_params: ['TDefTracking', 'frame', 'frame', 'gripper_r_frame = pre_grasp_r_frame', '0.1', '0.5']
 #   dyn_params: ['TDynPD', '10.0', '10.0', '10.0', '2.0', '2.0', '2.0', '0.05', '0.05', '0.05', '0.5', '0.5', '0.5']
  - name: pre_grasp_l_track
@@ -42,7 +42,7 @@ pre_grasp_tasks:
    active: true
    monitored: true
    def_params: ['TDefTracking', 'frame', 'frame', 'gripper_l_frame = pre_grasp_l_frame', '0.1']
-   dyn_params: ['TDynPD', '0.05', '0.5']
+   dyn_params: ['TDynPD', '1.0', '2.0']
 #   def_params: ['TDefTracking', 'frame', 'frame', 'gripper_l_frame = pre_grasp_l_frame', '0.1', '0.5']
 #   dyn_params: ['TDynPD', '10.0', '10.0', '10.0', '2.0', '2.0', '2.0', '0.05', '0.05', '0.05', '0.5', '0.5', '0.5']
 # - name: neutral pose
@@ -59,15 +59,15 @@ grasp_tasks:
    visible: true
    active: true
    monitored: true
-   def_params: ['TDefTracking', 'frame', 'frame', 'gripper_r_frame = grasp_r_frame', '0.1', '0.5']
-   dyn_params: ['TDynPD', '0.05', '0.05', '0.05', '0.5', '0.5', '0.5', '0.05', '0.05', '0.05', '0.5', '0.5', '0.5']
+   def_params: ['TDefTracking', 'frame', 'frame', 'gripper_r_frame = grasp_r_frame', '0.1']
+   dyn_params: ['TDynPD', '0.5', '1.5']
  - name: grasp_l_track
    priority: 2
    visible: true
    active: true
    monitored: true
-   def_params: ['TDefTracking', 'frame', 'frame', 'gripper_l_frame = grasp_l_frame', '0.1', '0.5']
-   dyn_params: ['TDynPD', '0.05', '0.05', '0.05', '0.5', '0.5', '0.5', '0.05', '0.05', '0.05', '0.5', '0.5', '0.5']
+   def_params: ['TDefTracking', 'frame', 'frame', 'gripper_l_frame = grasp_l_frame', '0.1']
+   dyn_params: ['TDynPD', '0.5', '1.5']
 # - name: neutral pose
 #   priority: 3
 #   visible: true
@@ -86,7 +86,7 @@ joint_config_tasks:
    active: true
    monitored: true
    def_params: ['TDefFullPose', '-1.0', '-1.4', '1.7', '-0.2', '0.0', '1.0', '1.0', '1.0', '-1.4', '-1.7', '-0.2', '0.0', '1.0', '-1.0']
-   dyn_params: ['TDynPD', '0.05', '0.5']
+   dyn_params: ['TDynPD', '0.5', '1.5']
 
 neutral_config_tasks:
  - name: neutral_config
@@ -95,4 +95,4 @@ neutral_config_tasks:
    active: true
    monitored: true
    def_params: ['TDefFullPose', '-1.0', '-1.4', '1.7', '-0.2', '0.0', '1.0', '1.0', '1.0', '-1.4', '-1.7', '-0.2', '0.0', '1.0', '-1.0']
-   dyn_params: ['TDynPD', '0.05', '0.5']
+   dyn_params: ['TDynPD', '0.5', '1.5']
