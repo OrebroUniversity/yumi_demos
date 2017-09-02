@@ -1,0 +1,81 @@
+<?xml version="1.0"?>
+<launch>
+
+   <arg name="name" default="yumi" doc="The robot name. Ensure this is the same name you give to the arm in the urdf instance."/>
+   <arg name="rviz" default="true"/>
+   
+  <!-- Run the experiment node -->
+  <node name="exp_node" pkg="balancing_grasping" type="balancing_exp_node" respawn="false" output="screen" >
+     <param name="frame_left" type="string" value="grasp_link"/>
+     <param name="log_directory" value="$(find balancing_grasping)/log"/>
+     <param name="robot_namespace" value="yumi"/>
+     <param name="tf_topic" value="/tf"/>
+     <param name="tf_static_topic" value="/tf_static"/>
+     <param name="js_topic" value="/yumi/joint_states"/>
+     <param name="ts_r_topic" value="/sensor_1/frames"/>
+     <param name="ts_l_topic" value="/sensor_2/frames"/>
+     <param name="js_topic" value="/yumi/joint_states"/>
+     <param name="pre_grasp_task_tol" value="1e-4"/>
+     <param name="grasp_task_tol" value="1e-4"/>
+     <param name="grasp_acq_dur" value="3.0"/>
+     <param name="grasp_cont_dur" value="2.0"/>
+     <param name="grasp_lift_dur" value="3.0"/>
+     <param name="grasp_task_dur" value="12.0"/>
+     <param name="theta_rand" value="1.0"/> <!-- the two grasp poses are randomized by a rotation around the world z axis within an interval given by this value -->
+     <param name="grasp_rand" value="0.08"/> <!-- the two grasp poses are randomized along the world x direction within an interval given by this value -->
+     <param name="alpha" value="0.3"/> <!--object tilt angle during the swivel motion-->
+     <param name="cont_lift" value="0.01"/> <!--vertical travel to establish contact after moving to grasp poses-->
+     <param name="grasp_lift" value="0.05"/> <!--vertical travel after grasping-->
+  </node>
+
+  <!--  Hardware interfaces and controllers -->
+  <arg name="controllers" default="joint_state_controller hiqp_joint_velocity_controller"/>
+  <arg name="gripper_controllers" default="gripper_effort_pos_controller_r gripper_effort_pos_controller_l"/>
+  <arg name="arms_hardware_interface" default="VelocityJointInterface"/>
+  <arg name="grippers_hardware_interface" default="EffortJointInterface"/>
+
+   <!-- Parameter server stuff -->
+  <rosparam file="$(find balancing_grasping)/config/yumi_controllers.yaml" command="load"/>
+  <rosparam file="$(find balancing_grasping)/config/gripper_controllers.yaml" command="load" ns="/yumi/"/>
+  <rosparam file="$(find balancing_grasping)/config/yumi_limits_preload.yaml" command="load"/>
+  <rosparam file="$(find balancing_grasping)/config/exp_tasks_online.yaml" command="load" ns="/exp_node" />
+
+  <!-- URDF / SRDF parameters -->
+    <param name="robot_description" command="$(find xacro)/xacro.py '$(find balancing_grasping)/urdf/balancing_grasping.urdf.xacro' arms_interface:=$(arg arms_hardware_interface) grippers_interface:=$(arg grippers_hardware_interface)" />
+
+    <!-- Network parameters -->
+    <!--arg name="ip" default="192.168.1.1"/--> <!--when talking to a virtual controller -->
+    <arg name="ip" default="192.168.125.1"/> <!--when talking to the real robot controller -->
+    <arg name="port" default="80"/>
+
+    <!-- EGM parameters -->
+    <arg name="egm" default="true"/>
+    <rosparam file="$(find yumi_hw)/config/egm_rws_config.yaml" command="load" ns="/yumi/yumi_hw" if="$(arg egm)"/>
+
+    <!-- Calls to yumi_hw members -->
+    <!-- The real hardware interface -->
+    <node required="true" name="yumi_hw" pkg="yumi_hw" type="yumi_hw_ifce_node" respawn="false" ns="/yumi" output="screen"> 
+        <param name="name" value="$(arg name)" />
+        <param name="ip" value="$(arg ip)"/>
+        <param name="port" value="$(arg port)"/>
+        <param name="use_egm" value="$(arg egm)"/>
+    </node>
+     
+    <!-- The grippers hardware interface -->
+    <node required="true" name="yumi_gripper" pkg="yumi_hw" type="yumi_gripper_node" respawn="false" ns="/yumi" output="screen"> 
+        <param name="ip" value="$(arg ip)"/>
+    </node>
+
+  <node name="arm_controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" args="$(arg controllers)" ns="/yumi"/>
+
+       <node name="yumi_joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" >
+        <rosparam param="source_list">["/yumi/joint_states", "/yumi/gripper_states"]</rosparam>
+    </node>
+
+    <node name="yumi_robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+  <node if="$(arg rviz)" name="rviz" pkg="rviz" type="rviz" args="-d $(find balancing_grasping)/launch/yumi.rviz"/>
+
+</launch>
+
+
