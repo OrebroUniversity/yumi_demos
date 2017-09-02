@@ -8,26 +8,35 @@
   <xacro:include filename="$(find yumi_description)/urdf/yumi.xacro"/>
   <!--Import the yumi servo gripper macro -->
   <xacro:include filename="$(find yumi_description)/urdf/Grippers/yumi_servo_gripper.xacro"/>
+  <!--Import the yumi optodaq sensors macro -->
+  <xacro:include filename="$(find yumi_description)/urdf/Extras/yumi_optodaq_sensors.xacro"/>
   <!-- Import Gazebo plugins -->
   <xacro:include filename="$(find yumi_description)/urdf/Gazebo/gazebo.urdf.xacro"/>
-
 
   <!--yumi-->
   <xacro:yumi name="yumi" hardware_interface="hardware_interface/$(arg arms_interface)" parent="${yumi_parent}" >
     <origin xyz="0 0 0.1" rpy="0 0 0" />
   </xacro:yumi>
 
-  <!--right gripper-->
-  <xacro:yumi_servo_gripper name="gripper_r" hardware_interface="hardware_interface/$(arg grippers_interface)" parent="yumi_link_7_r">
-    <origin xyz="0 0 0.007" rpy="0 0 ${PI}" />
-  </xacro:yumi_servo_gripper>
+ <xacro:yumi_optodaq_sensor name="optodaq_r" parent="yumi_link_7_r">
+     <origin xyz="0 0 0.033" rpy="0 ${PI} -0.7" />
+ </xacro:yumi_optodaq_sensor>
 
-  <!--left gripper-->
-  <xacro:yumi_servo_gripper name="gripper_l" hardware_interface="hardware_interface/$(arg grippers_interface)" parent="yumi_link_7_l">
-    <origin xyz="0 0 0.007" rpy="0 0 ${PI}" />
-  </xacro:yumi_servo_gripper>
+ <xacro:yumi_optodaq_sensor name="optodaq_l" parent="yumi_link_7_l">
+   <origin xyz="0 0 0.033" rpy="0 ${PI} -0.7" />
+ </xacro:yumi_optodaq_sensor>
 
-     <xacro:property name="yumi_parent" value="world" />
+ <!--right gripper-->
+ <xacro:yumi_servo_gripper name="gripper_r" hardware_interface="hardware_interface/EffortJointInterface" parent="optodaq_r_sensor_link">
+   <origin xyz="0 0 -0.033" rpy="0 ${-PI} ${PI}" />
+ </xacro:yumi_servo_gripper>
+
+ <!--left gripper-->
+ <xacro:yumi_servo_gripper name="gripper_l" hardware_interface="hardware_interface/EffortJointInterface" parent="optodaq_l_sensor_link">
+   <origin xyz="0 0 -0.033" rpy="0 ${-PI} ${PI}" />
+ </xacro:yumi_servo_gripper>
+
+    <xacro:property name="yumi_parent" value="world" />
     <link name="world"/>
     <joint name="world_joint" type="fixed">
       <parent link="world"/>
@@ -44,11 +53,10 @@
     </visual>
   </link>
 
-  <joint name="object_joint" type="floating">
+  <joint name="object_joint" type="fixed">
     <parent link="yumi_base_link" />
     <child link = "obj_frame" />
     <origin xyz="0.35 -0.15 0.2" rpy="0.0 0.0 0.0" />
   </joint>   
-
 
 </robot>

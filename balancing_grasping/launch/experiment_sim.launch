@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <launch>
 
+   <arg name="name" default="yumi" doc="The robot name. Ensure this is the same name you give to the arm in the urdf instance."/>
+   <arg name="rviz" default="true"/>
+
   <!-- Run the experiment node -->
   <node name="exp_node" pkg="balancing_grasping" type="balancing_exp_node" respawn="false" output="screen" >
      <param name="frame_left" type="string" value="grasp_link"/>
@@ -12,8 +15,9 @@
      <param name="ts_r_topic" value="/sensor_1/frames"/>
      <param name="ts_l_topic" value="/sensor_2/frames"/>
      <param name="js_topic" value="/yumi/joint_states"/>
-     <param name="pre_grasp_task_tol" value="1e-4"/>
-     <param name="grasp_task_tol" value="1e-4"/>
+     <param name="joint_task_tol" value="0.01"/>
+     <param name="pre_grasp_task_tol" value="0.0005"/>
+     <param name="grasp_task_tol" value="0.0005"/>
      <param name="grasp_acq_dur" value="3.0"/>
      <param name="grasp_cont_dur" value="2.0"/>
      <param name="grasp_lift_dur" value="3.0"/>
@@ -22,7 +26,7 @@
      <param name="grasp_rand" value="0.08"/> <!-- the two grasp poses are randomized along the world x direction within an interval given by this value -->
      <param name="alpha" value="0.3"/> <!--object tilt angle during the swivel motion-->
      <param name="cont_lift" value="0.01"/> <!--vertical travel to establish contact after moving to grasp poses-->
-     <param name="grasp_lift" value="0.05"/> <!--vertical travel after grasping-->
+     <param name="grasp_lift" value="0.15"/> <!--vertical travel after grasping-->
   </node>
 
   <!--  Hardware interfaces and controllers -->
@@ -35,7 +39,7 @@
   <rosparam file="$(find balancing_grasping)/config/yumi_controllers.yaml" command="load"/>
   <rosparam file="$(find balancing_grasping)/config/gripper_controllers.yaml" command="load" ns="/yumi/"/>
   <rosparam file="$(find balancing_grasping)/config/yumi_limits_preload.yaml" command="load"/>
-  <rosparam file="$(find balancing_grasping)/config/exp_tasks.yaml" command="load" ns="/exp_node" />
+  <rosparam file="$(find balancing_grasping)/config/exp_tasks_sim.yaml" command="load" ns="/exp_node" />
 
    <!-- Fire up Gazebo-->
   <arg name="paused" default="false"/>
@@ -43,7 +47,6 @@
   <arg name="gui" default="false"/>
   <arg name="headless" default="false"/>
   <arg name="debug" default="false"/>
-  <arg name="rviz" default="true"/>
   <arg unless="$(arg debug)" name="launch_prefix" value="" />
   <arg if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
@@ -55,7 +58,10 @@
   </include>
 
   <!-- URDF / SRDF parameters -->
-  <param name="robot_description" command="$(find xacro)/xacro.py '$(find balancing_grasping)/urdf/balancing_grasping.urdf.xacro' arms_interface:=$(arg arms_hardware_interface) grippers_interface:=$(arg grippers_hardware_interface)" />
+  <!--param name="robot_description" command="$(find xacro)/xacro.py '$(find balancing_grasping)/urdf/balancing_grasping.urdf.xacro' arms_interface:=$(arg arms_hardware_interface) grippers_interface:=$(arg grippers_hardware_interface)" /-->
+
+    <param name="robot_description" command="$(find xacro)/xacro.py '$(find balancing_grasping)/urdf/balancing_grasping.urdf.xacro' arms_interface:=$(arg arms_hardware_interface) grippers_interface:=$(arg grippers_hardware_interface)" />
+
   <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-urdf -model yumi -param robot_description"  respawn="false" output="screen" />
   
   <node name="arm_controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" args="$(arg controllers)" ns="/yumi"/>

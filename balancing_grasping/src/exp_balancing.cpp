@@ -1,9 +1,9 @@
 #include <iostream> // std::cout
 #include <sstream>  // std::stringstream
-#include <string>   // std::string
+#include <std_msgs/UInt16MultiArray.h>
+#include <string> // std::string
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <std_msgs/UInt16MultiArray.h>
 #include <xmlrpcpp/XmlRpcException.h>
 #include <xmlrpcpp/XmlRpcValue.h>
 
@@ -31,7 +31,7 @@ ExpBalancing::ExpBalancing() {
   nh_.param("cont_lift", cont_lift, 0.005);
   nh_.param("grasp_lift", grasp_lift, 0.05);
   nh_.param("grasp_rand", grasp_rand, 0.08);
-  nh_.param("theta_rand", theta_rand, 0.3);  
+  nh_.param("theta_rand", theta_rand, 0.3);
   nh_.param("grasp_threshold", grasp_thresh_tol, 0.2);       // 0 to 1
   nh_.param("joint_task_tol", joint_task_tol, 1e-2);         // 0 to 1
   nh_.param("pre_grasp_task_tol", pre_grasp_task_tol, 1e-4); // 0 to 1
@@ -80,6 +80,7 @@ ExpBalancing::ExpBalancing() {
   loadTasksFromParamServer("pre_grasp_tasks", pre_grasp_tasks,
                            pre_grasp_task_names);
   loadTasksFromParamServer("grasp_tasks", grasp_tasks, grasp_task_names);
+  loadTasksFromParamServer("neutral_config_tasks", neutral_config_tasks, neutral_config_task_names);  
   // loadTasksFromParamServer("pick_assisted_tasks", pick_assisted_tasks,
   // pick_assisted_task_names);
   // loadTasksFromParamServer("drop_assisted_tasks", drop_assisted_tasks,
@@ -113,6 +114,7 @@ void ExpBalancing::expMainLoop() {
     //    next_task = true;
     cond_.notify_one();
     hiqp_client_->removeTasks(grasp_task_names);
+    hiqp_client_->removeTasks(neutral_config_task_names);
 #if 1
     //---------------------------------------------------------------------------------------//
     ROS_INFO("TASK SET 1: Moving to init joint configuration.");
@@ -134,7 +136,8 @@ void ExpBalancing::expMainLoop() {
       //}
       hiqp_client_->setTasks(joint_tasks);
     }
-
+    
+    hiqp_client_->setTasks(neutral_config_tasks);
     hiqp_client_->waitForCompletion(joint_task_names, reactions, tolerances);
     // cond_.notify_one();
     //---------------------------------------------------------------------------------------//
@@ -188,17 +191,19 @@ void ExpBalancing::expMainLoop() {
       v.setX(v.getX() + randomNumber(-grasp_rand / 2, grasp_rand / 2));
       target_l_frame.setOrigin(v);
 
-      //randomize orientations around world z
+      // randomize orientations around world z
       double roll, pitch, yaw;
       tf::Matrix3x3 R;
       target_r_frame.getBasis().getRPY(roll, pitch, yaw);
-      R.setRPY(roll, pitch, yaw+randomNumber(-theta_rand / 2, theta_rand / 2));           
+      R.setRPY(roll, pitch,
+               yaw + randomNumber(-theta_rand / 2, theta_rand / 2));
       target_r_frame.setBasis(R);
-      
+
       target_l_frame.getBasis().getRPY(roll, pitch, yaw);
-      R.setRPY(roll, pitch, yaw+randomNumber(-theta_rand / 2, theta_rand / 2));           
+      R.setRPY(roll, pitch,
+               yaw + randomNumber(-theta_rand / 2, theta_rand / 2));
       target_l_frame.setBasis(R);
-	    
+
       std::list<tf::Transform> poses_r = minJerkTraj(
           current_r_frame, target_r_frame, grasp_acq_dur, TF_PUBLISH_PERIOD);
       std::list<tf::Transform> poses_l = minJerkTraj(
@@ -361,6 +366,13 @@ void ExpBalancing::expMainLoop() {
     //---------------------------------------------------------------------------------------//
     ROS_INFO("TASK SET 6: Starting balancing grasping task.");
     {
+      reactions.clear();
+      tolerances.clear();
+      for (int i = 0; i < grasp_task_names.size(); i++) {
+        reactions.push_back(hiqp_ros::TaskDoneReaction::NONE);
+        tolerances.push_back(grasp_task_tol);
+      }
+
       current_obj_frame = target_obj_frame;
 
       // the target frame is tilted by -alpha around the x axis
@@ -793,7 +805,7 @@ void ExpBalancing::ts_r_callback(const wts_driver::Frame::ConstPtr &msg) {
   bag_mutex.lock();
   if (bag_is_open) {
     std_msgs::UInt16MultiArray readings;
-    readings.data=msg->data;
+    readings.data = msg->data;
     current_bag.write("/ts_r", ros::Time::now(), readings);
   }
   bag_mutex.unlock();
@@ -802,8 +814,8 @@ void ExpBalancing::ts_r_callback(const wts_driver::Frame::ConstPtr &msg) {
 void ExpBalancing::ts_l_callback(const wts_driver::Frame::ConstPtr &msg) {
   bag_mutex.lock();
   if (bag_is_open) {
-    std_msgs::UInt16MultiArray readings;    
-    readings.data=msg->data;
+    std_msgs::UInt16MultiArray readings;
+    readings.data = msg->data;
     current_bag.write("/ts_l", ros::Time::now(), readings);
   }
   bag_mutex.unlock();

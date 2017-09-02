@@ -65,9 +65,9 @@ class ExpBalancing {
   bool  quit_demo, tf_published;
 
   double grasp_thresh_tol, grasp_acq_dur, grasp_task_dur, grasp_lift_dur, grasp_cont_dur;
-  std::vector<hiqp_msgs::Task> pre_grasp_tasks, grasp_tasks, joint_tasks, teleop_tasks,
+  std::vector<hiqp_msgs::Task> pre_grasp_tasks, neutral_config_tasks, grasp_tasks, joint_tasks, teleop_tasks,
     pick_assisted_tasks, drop_assisted_tasks, point_assisted_tasks;
-  std::vector<std::string> pre_grasp_task_names, grasp_task_names, joint_task_names, teleop_task_names,
+  std::vector<std::string> pre_grasp_task_names, grasp_task_names, neutral_config_task_names, joint_task_names, teleop_task_names,
     pick_assisted_task_names, drop_assisted_task_names, point_assisted_task_names;
   
   std::vector<tf::StampedTransform> target_poses;
