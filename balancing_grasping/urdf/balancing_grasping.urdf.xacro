@@ -28,12 +28,12 @@
 
  <!--right gripper-->
  <xacro:yumi_servo_gripper name="gripper_r" hardware_interface="hardware_interface/EffortJointInterface" parent="optodaq_r_sensor_link">
-   <origin xyz="0 0 -0.033" rpy="0 ${-PI} ${PI}" />
+   <origin xyz="0 0 -0.033" rpy="${PI} 0.0 ${PI/4}" />
  </xacro:yumi_servo_gripper>
 
  <!--left gripper-->
  <xacro:yumi_servo_gripper name="gripper_l" hardware_interface="hardware_interface/EffortJointInterface" parent="optodaq_l_sensor_link">
-   <origin xyz="0 0 -0.033" rpy="0 ${-PI} ${PI}" />
+   <origin xyz="0 0 -0.033" rpy="${PI} 0.0 ${PI/4}" />
  </xacro:yumi_servo_gripper>
 
     <xacro:property name="yumi_parent" value="world" />
