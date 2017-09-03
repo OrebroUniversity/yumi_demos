@@ -5,6 +5,7 @@ yumi:
   hiqp_joint_velocity_controller:
     type: hiqp_ros/HiQPJointVelocityController
     visualization_publish_rate: 50 #Hz
+    c_state_publish_rate: 50 #Hz
     load_primitives_from_tf: true
     joints:
       - yumi_joint_1_r
