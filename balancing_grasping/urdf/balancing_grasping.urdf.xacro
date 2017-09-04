@@ -19,11 +19,11 @@
   </xacro:yumi>
 
  <xacro:yumi_optodaq_sensor name="optodaq_r" parent="yumi_link_7_r">
-     <origin xyz="0 0 0.033" rpy="0 ${PI} -0.7" />
+     <origin xyz="0 0 0.033" rpy="0 ${PI} ${-PI/4}" />
  </xacro:yumi_optodaq_sensor>
 
  <xacro:yumi_optodaq_sensor name="optodaq_l" parent="yumi_link_7_l">
-   <origin xyz="0 0 0.033" rpy="0 ${PI} -0.7" />
+   <origin xyz="0 0 0.033" rpy="0 ${PI} ${-PI/4}" />
  </xacro:yumi_optodaq_sensor>
 
  <!--right gripper-->

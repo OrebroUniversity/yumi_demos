@@ -1,0 +1,134 @@
+{
+  "keys": {}, 
+  "groups": {
+    "pluginmanager": {
+      "keys": {
+        "running-plugins": {
+          "type": "repr", 
+          "repr": "{u'rqt_plot/Plot': [2, 1]}"
+        }
+      }, 
+      "groups": {
+        "plugin__rqt_plot__Plot__1": {
+          "keys": {}, 
+          "groups": {
+            "dock_widget__DataPlotWidget": {
+              "keys": {
+                "dockable": {
+                  "type": "repr", 
+                  "repr": "True"
+                }, 
+                "parent": {
+                  "type": "repr", 
+                  "repr": "None"
+                }, 
+                "dock_widget_title": {
+                  "type": "repr", 
+                  "repr": "u'PyQtGraph'"
+                }
+              }, 
+              "groups": {}
+            }, 
+            "plugin": {
+              "keys": {
+                "autoscroll": {
+                  "type": "repr", 
+                  "repr": "False"
+                }, 
+                "plot_type": {
+                  "type": "repr", 
+                  "repr": "0"
+                }, 
+                "topics": {
+                  "type": "repr", 
+                  "repr": "[u'/yumi/hiqp_joint_velocity_controller/joint_controller_state/command[0]', u'/yumi/hiqp_joint_velocity_controller/joint_controller_state/command[1]', u'/yumi/hiqp_joint_velocity_controller/joint_controller_state/command[3]', u'/yumi/hiqp_joint_velocity_controller/joint_controller_state/command[6]', u'/yumi/hiqp_joint_velocity_controller/joint_controller_state/command[2]', u'/yumi/hiqp_joint_velocity_controller/joint_controller_state/command[4]', u'/yumi/hiqp_joint_velocity_controller/joint_controller_state/command[5]']"
+                }, 
+                "y_limits": {
+                  "type": "repr", 
+                  "repr": "[-0.5, 0.5]"
+                }, 
+                "x_limits": {
+                  "type": "repr", 
+                  "repr": "[42.35185894691625, 76.39765572547913]"
+                }
+              }, 
+              "groups": {}
+            }
+          }
+        }, 
+        "plugin__rqt_plot__Plot__2": {
+          "keys": {}, 
+          "groups": {
+            "dock_widget__DataPlotWidget": {
+              "keys": {
+                "dockable": {
+                  "type": "repr", 
+                  "repr": "True"
+                }, 
+                "parent": {
+                  "type": "repr", 
+                  "repr": "None"
+                }, 
+                "dock_widget_title": {
+                  "type": "repr", 
+                  "repr": "u'PyQtGraph (2)'"
+                }
+              }, 
+              "groups": {}
+            }, 
+            "plugin": {
+              "keys": {
+                "autoscroll": {
+                  "type": "repr", 
+                  "repr": "False"
+                }, 
+                "plot_type": {
+                  "type": "repr", 
+                  "repr": "0"
+                }, 
+                "topics": {
+                  "type": "repr", 
+                  "repr": "[u'/yumi/joint_states/velocity[10]', u'/yumi/joint_states/velocity[12]', u'/yumi/joint_states/velocity[2]', u'/yumi/joint_states/velocity[0]', u'/yumi/joint_states/velocity[8]', u'/yumi/joint_states/velocity[6]', u'/yumi/joint_states/velocity[4]']"
+                }, 
+                "y_limits": {
+                  "type": "repr", 
+                  "repr": "[-0.0059441163589115525, 0.0070339371208266045]"
+                }, 
+                "x_limits": {
+                  "type": "repr", 
+                  "repr": "[-1504509021.8910172, -1504508966.6145012]"
+                }
+              }, 
+              "groups": {}
+            }
+          }
+        }
+      }
+    }, 
+    "mainwindow": {
+      "keys": {
+        "geometry": {
+          "type": "repr(QByteArray.hex)", 
+          "repr(QByteArray.hex)": "QtCore.QByteArray('01d9d0cb0002000000000041000000180000077f0000043700000041000000180000077f0000043700000000000000000780')", 
+          "pretty-print": "     A     7 A     7     "
+        }, 
+        "state": {
+          "type": "repr(QByteArray.hex)", 
+          "repr(QByteArray.hex)": "QtCore.QByteArray('000000ff00000000fd00000001000000030000073f0000040afc0100000002fb00000042007200710074005f0070006c006f0074005f005f0050006c006f0074005f005f0031005f005f00440061007400610050006c006f007400570069006400670065007401000000000000039d0000016f00fffffffb00000042007200710074005f0070006c006f0074005f005f0050006c006f0074005f005f0032005f005f00440061007400610050006c006f007400570069006400670065007401000003a30000039c0000016f00ffffff0000073f0000000000000004000000040000000800000008fc00000001000000030000000100000036004d0069006e0069006d0069007a006500640044006f0063006b00570069006400670065007400730054006f006f006c0062006100720000000000ffffffff0000000000000000')", 
+          "pretty-print": "                 Brqt_plot__Plot__1__DataPlotWidget          Brqt_plot__Plot__2__DataPlotWidget                            6MinimizedDockWidgetsToolbar        "
+        }
+      }, 
+      "groups": {
+        "toolbar_areas": {
+          "keys": {
+            "MinimizedDockWidgetsToolbar": {
+              "type": "repr", 
+              "repr": "8"
+            }
+          }, 
+          "groups": {}
+        }
+      }
+    }
+  }
+}
