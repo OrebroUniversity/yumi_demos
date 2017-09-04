@@ -1,5 +1,6 @@
 #include <iostream> // std::cout
 #include <sstream>  // std::stringstream
+#include <std_msgs/Float64.h>
 #include <std_msgs/UInt16MultiArray.h>
 #include <string> // std::string
 #include <sys/stat.h>
@@ -18,10 +19,14 @@ ExpBalancing::ExpBalancing() {
   // nh_.param<std::string>("grasp_left_topic",gleft_topic,"/leap_hands/grasp_left");
 
   nh_.param<std::string>("tf_topic", tf_topic, "/tf");
-  nh_.param<std::string>("tf_static_topic", tf_static_topic, "/tf_static");
+  //  nh_.param<std::string>("tf_static_topic", tf_static_topic, "/tf_static");
   nh_.param<std::string>("js_topic", js_topic, "/yumi/joint_states");
   nh_.param<std::string>("ts_r_topic", ts_r_topic, "/sensor_1/frames");
   nh_.param<std::string>("ts_l_topic", ts_l_topic, "/sensor_2/frames");
+  nh_.param<std::string>("gripper_r_topic", gripper_r_topic,
+                         "/yumi/gripper_r_effort_cmd");
+  nh_.param<std::string>("gripper_l_topic", gripper_l_topic,
+                         "/yumi/gripper_l_effort_cmd");
 
   // nh_.param<std::string>("hand_frame_left",hand_frame_left,"teleop_left_frame");
   nh_.param<std::string>("log_directory", log_dir, "log");
@@ -43,18 +48,21 @@ ExpBalancing::ExpBalancing() {
 
   //  marker_viz_pub_ = nh_.advertise<visualization_msgs::MarkerArray>
   //  ("teleop_markers",10);
-  //    gripper_pub_ = nh_.advertise<robotiq_85_msgs::GripperCmd>
+  gripper_r_pub_ = n_.advertise<std_msgs::Float64>(gripper_r_topic, 1, true);
+  gripper_l_pub_ = n_.advertise<std_msgs::Float64>(gripper_l_topic, 1, true);
   //    ("grasp_cmd",10);
 
   //  grasp_left_sub_ = n_.subscribe(gleft_topic, 1,
   //  &ExpBalancing::grasp_left_callback, this);
+
   ts_r_sub_ = n_.subscribe(ts_r_topic, 1, &ExpBalancing::ts_r_callback, this);
   ts_l_sub_ = n_.subscribe(ts_l_topic, 1, &ExpBalancing::ts_l_callback, this);
+
   joint_state_sub_ =
       n_.subscribe(js_topic, 1, &ExpBalancing::js_callback, this);
   tf_sub_ = n_.subscribe(tf_topic, 1, &ExpBalancing::tf_callback, this);
-  tf_static_sub_ =
-      n_.subscribe(tf_static_topic, 1, &ExpBalancing::tf_callback, this);
+  //  tf_static_sub_ =
+  //      n_.subscribe(tf_static_topic, 1, &ExpBalancing::tf_callback, this);
 
   start_demo_ = nh_.advertiseService("start_demo",
                                      &ExpBalancing::start_demo_callback, this);
@@ -80,7 +88,8 @@ ExpBalancing::ExpBalancing() {
   loadTasksFromParamServer("pre_grasp_tasks", pre_grasp_tasks,
                            pre_grasp_task_names);
   loadTasksFromParamServer("grasp_tasks", grasp_tasks, grasp_task_names);
-  loadTasksFromParamServer("neutral_config_tasks", neutral_config_tasks, neutral_config_task_names);  
+  loadTasksFromParamServer("neutral_config_tasks", neutral_config_tasks,
+                           neutral_config_task_names);
   // loadTasksFromParamServer("pick_assisted_tasks", pick_assisted_tasks,
   // pick_assisted_task_names);
   // loadTasksFromParamServer("drop_assisted_tasks", drop_assisted_tasks,
@@ -115,8 +124,8 @@ void ExpBalancing::expMainLoop() {
     cond_.notify_one();
     hiqp_client_->removeTasks(grasp_task_names);
     hiqp_client_->removeTasks(neutral_config_task_names);
+//---------------------------------------------------------------------------------------//
 #if 1
-    //---------------------------------------------------------------------------------------//
     ROS_INFO("TASK SET 1: Moving to init joint configuration.");
     {
       reactions.clear();
@@ -136,10 +145,17 @@ void ExpBalancing::expMainLoop() {
       //}
       hiqp_client_->setTasks(joint_tasks);
     }
-    
+
     hiqp_client_->setTasks(neutral_config_tasks);
     hiqp_client_->waitForCompletion(joint_task_names, reactions, tolerances);
     // cond_.notify_one();
+
+    //---------------------------------------------------------------------------------------//
+    ROS_INFO("Relax grippers.");
+    std_msgs::Float64 cmd;
+    cmd.data = 0.0;
+    gripper_r_pub_.publish(cmd);
+    gripper_l_pub_.publish(cmd);
     //---------------------------------------------------------------------------------------//
     ROS_INFO("TASK SET 2: Moving to pre-grasp poses.");
     {
@@ -183,11 +199,11 @@ void ExpBalancing::expMainLoop() {
 
       // randomize the pose of the grasp target frames along the world x axis
       tf::Vector3 v = current_r_frame.getOrigin();
-      v.setY(-0.1);
+      v.setY(-0.12);
       v.setX(v.getX() + randomNumber(-grasp_rand / 2, grasp_rand / 2));
       target_r_frame.setOrigin(v);
       v = current_l_frame.getOrigin();
-      v.setY(0.1);
+      v.setY(0.12);
       v.setX(v.getX() + randomNumber(-grasp_rand / 2, grasp_rand / 2));
       target_l_frame.setOrigin(v);
 
@@ -543,7 +559,11 @@ bool ExpBalancing::loadPreGraspPoses() {
 bool ExpBalancing::start_demo_callback(std_srvs::Empty::Request &req,
                                        std_srvs::Empty::Response &res) {
   initializeDemo();
-
+  std_msgs::Float64 cmd;
+  cmd.data = -10.0;
+  ROS_INFO("Opening grippers.");
+  gripper_r_pub_.publish(cmd);
+  gripper_l_pub_.publish(cmd);
   // HERE setup loggers and demo run id
   setupNewExperiment();
   // set next task
@@ -801,7 +821,7 @@ void ExpBalancing::closeCurrentBag() {
   bag_mutex.unlock();
 }
 
-void ExpBalancing::ts_r_callback(const wts_driver::Frame::ConstPtr &msg) {
+void ExpBalancing::ts_r_callback(const wts_driver::Frame::ConstPtr msg) {
   bag_mutex.lock();
   if (bag_is_open) {
     std_msgs::UInt16MultiArray readings;
@@ -811,7 +831,7 @@ void ExpBalancing::ts_r_callback(const wts_driver::Frame::ConstPtr &msg) {
   bag_mutex.unlock();
 }
 
-void ExpBalancing::ts_l_callback(const wts_driver::Frame::ConstPtr &msg) {
+void ExpBalancing::ts_l_callback(const wts_driver::Frame::ConstPtr msg) {
   bag_mutex.lock();
   if (bag_is_open) {
     std_msgs::UInt16MultiArray readings;
@@ -821,7 +841,7 @@ void ExpBalancing::ts_l_callback(const wts_driver::Frame::ConstPtr &msg) {
   bag_mutex.unlock();
 }
 
-void ExpBalancing::js_callback(const sensor_msgs::JointState::ConstPtr &msg) {
+void ExpBalancing::js_callback(const sensor_msgs::JointState::ConstPtr msg) {
   bag_mutex.lock();
   if (bag_is_open) {
     current_bag.write(js_topic, msg->header.stamp, msg);
@@ -829,12 +849,14 @@ void ExpBalancing::js_callback(const sensor_msgs::JointState::ConstPtr &msg) {
   bag_mutex.unlock();
 }
 
-void ExpBalancing::tf_callback(const tf::tfMessage::ConstPtr &msg) {
+void ExpBalancing::tf_callback(const tf::tfMessage::ConstPtr msg) {
+
   bag_mutex.lock();
   if (bag_is_open) {
     current_bag.write(tf_topic, ros::Time::now(), msg);
   }
   bag_mutex.unlock();
+
 }
 
 //---------------------------------------------------------------------

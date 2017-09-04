@@ -33,11 +33,12 @@ class ExpBalancing {
   //  ros::Subscriber grasp_left_sub_;
 
   ros::Subscriber joint_state_sub_, ts_r_sub_, ts_l_sub_;
-  ros::Subscriber tf_sub_, tf_static_sub_;
+  ros::Subscriber tf_sub_;// tf_static_sub_;
 
   //  ros::Publisher marker_viz_pub_;
-  //ros::Publisher gripper_pub_;	
-
+  ros::Publisher gripper_r_pub_;	
+  ros::Publisher gripper_l_pub_;
+  
   ///Clients to other nodes
   std::shared_ptr<hiqp_ros::HiQPClient> hiqp_client_;
 	
@@ -56,7 +57,7 @@ class ExpBalancing {
   boost::condition_variable cond_;
   boost::condition_variable tf_pub_cond_;  
 
-  std::string js_topic, tf_topic, tf_static_topic, ts_r_topic, ts_l_topic;
+  std::string js_topic, gripper_r_topic, gripper_l_topic, tf_topic, tf_static_topic, ts_r_topic, ts_l_topic;
   std::string log_dir;
 
   double grasp_thresh, grasp_rand, theta_rand, alpha, joint_task_tol, pre_grasp_task_tol, grasp_task_tol, cont_lift, grasp_lift;
@@ -99,11 +100,11 @@ class ExpBalancing {
   bool loadTasksFromParamServer(std::string task_group_name, 
 				std::vector<hiqp_msgs::Task> &tasks_out, std::vector<std::string> &task_names_out);
 	
-  void grasp_left_callback(const std_msgs::Float32::ConstPtr& msg);
-  void js_callback(const sensor_msgs::JointState::ConstPtr& msg);
-  void tf_callback(const tf::tfMessage::ConstPtr& msg);
-  void ts_r_callback(const wts_driver::Frame::ConstPtr& msg);  
-  void ts_l_callback(const wts_driver::Frame::ConstPtr& msg);
+  void grasp_left_callback(const std_msgs::Float32::ConstPtr msg);
+  void js_callback(const sensor_msgs::JointState::ConstPtr msg);
+  void tf_callback(const tf::tfMessage::ConstPtr msg);
+  void ts_r_callback(const wts_driver::Frame::ConstPtr msg);  
+  void ts_l_callback(const wts_driver::Frame::ConstPtr msg);
   
   bool start_demo_callback(std_srvs::Empty::Request  &req,
 			   std_srvs::Empty::Response &res );

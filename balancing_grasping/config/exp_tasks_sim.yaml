@@ -5,13 +5,13 @@ grasping_geometric_primitives:
    frame_id: gripper_r_base
    visible: true
    color: [0.0, 0.5, 0.0, 1.0]
-   parameters: [0.0, 0.0, 0.15, 0.0, 0.0, 0.0]
+   parameters: [0.0245, 0.0, 0.14, 0.0, 0.0, 0.0]
  - name: gripper_l_frame
    type: frame 
    frame_id: gripper_l_base
    visible: true
    color: [0.0, 0.5, 0.0, 1.0]
-   parameters: [0.0, 0.0, 0.15, 0.0, 0.0, 0.0]
+   parameters: [-0.0245, 0.0, 0.14, 0.0, 0.0, 0.0]
  - name: pre_grasp_r_frame
    type: frame 
    frame_id: yumi_base_link

@@ -10,22 +10,24 @@
      <param name="log_directory" value="$(find balancing_grasping)/log"/>
      <param name="robot_namespace" value="yumi"/>
      <param name="tf_topic" value="/tf"/>
-     <param name="tf_static_topic" value="/tf_static"/>
-     <param name="js_topic" value="/yumi/joint_states"/>
+     <!--param name="tf_static_topic" value="/tf_static"/-->
+     <param name="js_topic" value="/joint_states"/>
+     <param name="grasp_r_topic" value="/yumi/gripper_r_effort_cmd"/>
+     <param name="grasp_l_topic" value="/yumi/gripper_l_effort_cmd"/>
      <param name="ts_r_topic" value="/sensor_1/frames"/>
      <param name="ts_l_topic" value="/sensor_2/frames"/>
-     <param name="js_topic" value="/yumi/joint_states"/>
+     <param name="joint_task_tol" value="0.01"/>
      <param name="pre_grasp_task_tol" value="0.0001"/>
      <param name="grasp_task_tol" value="0.0001"/>
      <param name="grasp_acq_dur" value="6.0"/>
      <param name="grasp_cont_dur" value="4.0"/>
-     <param name="grasp_lift_dur" value="8.0"/>
+     <param name="grasp_lift_dur" value="14.0"/>
      <param name="grasp_task_dur" value="180.0"/>
      <param name="theta_rand" value="1.0"/> <!-- the two grasp poses are randomized by a rotation around the world z axis within an interval given by this value -->
      <param name="grasp_rand" value="0.08"/> <!-- the two grasp poses are randomized along the world x direction within an interval given by this value -->
      <param name="alpha" value="0.3"/> <!--object tilt angle during the swivel motion-->
      <param name="cont_lift" value="0.01"/> <!--vertical travel to establish contact after moving to grasp poses-->
-     <param name="grasp_lift" value="0.05"/> <!--vertical travel after grasping-->
+     <param name="grasp_lift" value="0.1"/> <!--vertical travel after grasping-->
   </node>
 
   <!--  Hardware interfaces and controllers -->
