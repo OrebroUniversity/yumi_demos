@@ -394,7 +394,7 @@ void ExpBalancing::expMainLoop() {
       // the target frame is tilted by -alpha around the x axis
       tf::Transform target_obj_frame = current_obj_frame;
       Eigen::Quaterniond q(
-          Eigen::Matrix3d(Eigen::AngleAxisd(-alpha, Eigen::Vector3d::UnitX())));
+          Eigen::Matrix3d(Eigen::AngleAxisd(-alpha, Eigen::Vector3d::UnitY())));
       target_obj_frame.setRotation(tf::Quaternion(q.x(), q.y(), q.z(), q.w()));
 
       // split the duration for 1/6 of the tilt motion and 5/6 for the swivel
@@ -402,19 +402,19 @@ void ExpBalancing::expMainLoop() {
       std::list<tf::Transform> poses_obj =
           minJerkTraj(current_obj_frame, target_obj_frame, grasp_task_dur / 6,
                       TF_PUBLISH_PERIOD);
-
+      
+      std::list<tf::Transform> poses_tmp;
       current_obj_frame = target_obj_frame;
       q = Eigen::Quaterniond(
-          Eigen::Matrix3d(Eigen::AngleAxisd(alpha, Eigen::Vector3d::UnitY())));
+          Eigen::Matrix3d(Eigen::AngleAxisd(-alpha, Eigen::Vector3d::UnitX())));
       target_obj_frame.setRotation(tf::Quaternion(q.x(), q.y(), q.z(), q.w()));
-      std::list<tf::Transform> poses_tmp =
-          minJerkTraj(current_obj_frame, target_obj_frame, grasp_task_dur / 6,
+      poses_tmp =  minJerkTraj(current_obj_frame, target_obj_frame, grasp_task_dur / 6,
                       TF_PUBLISH_PERIOD);
       poses_obj.splice(poses_obj.end(), poses_tmp);
 
       current_obj_frame = target_obj_frame;
       q = Eigen::Quaterniond(
-          Eigen::Matrix3d(Eigen::AngleAxisd(alpha, Eigen::Vector3d::UnitX())));
+          Eigen::Matrix3d(Eigen::AngleAxisd(alpha, Eigen::Vector3d::UnitY())));
       target_obj_frame.setRotation(tf::Quaternion(q.x(), q.y(), q.z(), q.w()));
       poses_tmp = minJerkTraj(current_obj_frame, target_obj_frame,
                               grasp_task_dur / 6, TF_PUBLISH_PERIOD);
@@ -422,7 +422,7 @@ void ExpBalancing::expMainLoop() {
 
       current_obj_frame = target_obj_frame;
       q = Eigen::Quaterniond(
-          Eigen::Matrix3d(Eigen::AngleAxisd(-alpha, Eigen::Vector3d::UnitY())));
+          Eigen::Matrix3d(Eigen::AngleAxisd(alpha, Eigen::Vector3d::UnitX())));
       target_obj_frame.setRotation(tf::Quaternion(q.x(), q.y(), q.z(), q.w()));
       poses_tmp = minJerkTraj(current_obj_frame, target_obj_frame,
                               grasp_task_dur / 6, TF_PUBLISH_PERIOD);
