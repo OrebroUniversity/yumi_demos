@@ -41,6 +41,7 @@ ExpBalancing::ExpBalancing() {
   nh_.param("joint_task_tol", joint_task_tol, 1e-2);         // 0 to 1
   nh_.param("pre_grasp_task_tol", pre_grasp_task_tol, 1e-4); // 0 to 1
   nh_.param("grasp_task_tol", grasp_task_tol, 1e-4);         // 0 to 1
+  nh_.param("contact_task_tol", contact_task_tol, 1e-4);   
   nh_.param("grasp_acq_dur", grasp_acq_dur, 3.0);
   nh_.param("grasp_lift_dur", grasp_lift_dur, 3.0);
   nh_.param("grasp_cont_dur", grasp_cont_dur, 2.0);
@@ -125,7 +126,6 @@ void ExpBalancing::expMainLoop() {
     hiqp_client_->removeTasks(grasp_task_names);
     hiqp_client_->removeTasks(neutral_config_task_names);
 //---------------------------------------------------------------------------------------//
-#if 1
     ROS_INFO("TASK SET 1: Moving to init joint configuration.");
     {
       reactions.clear();
@@ -150,12 +150,6 @@ void ExpBalancing::expMainLoop() {
     hiqp_client_->waitForCompletion(joint_task_names, reactions, tolerances);
     // cond_.notify_one();
 
-    //---------------------------------------------------------------------------------------//
-    ROS_INFO("Relax grippers.");
-    std_msgs::Float64 cmd;
-    cmd.data = 0.0;
-    gripper_r_pub_.publish(cmd);
-    gripper_l_pub_.publish(cmd);
     //---------------------------------------------------------------------------------------//
     ROS_INFO("TASK SET 2: Moving to pre-grasp poses.");
     {
@@ -199,11 +193,11 @@ void ExpBalancing::expMainLoop() {
 
       // randomize the pose of the grasp target frames along the world x axis
       tf::Vector3 v = current_r_frame.getOrigin();
-      v.setY(-0.12);
+      v.setY(-0.124);
       v.setX(v.getX() + randomNumber(-grasp_rand / 2, grasp_rand / 2));
       target_r_frame.setOrigin(v);
       v = current_l_frame.getOrigin();
-      v.setY(0.12);
+      v.setY(0.124);
       v.setX(v.getX() + randomNumber(-grasp_rand / 2, grasp_rand / 2));
       target_l_frame.setOrigin(v);
 
@@ -263,7 +257,7 @@ void ExpBalancing::expMainLoop() {
       tolerances.clear();
       for (int i = 0; i < grasp_task_names.size(); i++) {
         reactions.push_back(hiqp_ros::TaskDoneReaction::NONE);
-        tolerances.push_back(grasp_task_tol);
+        tolerances.push_back(contact_task_tol);
       }
 
       current_r_frame = target_r_frame;
@@ -318,7 +312,6 @@ void ExpBalancing::expMainLoop() {
     R_O_T = target_obj_frame.inverse() * target_r_frame;
     L_O_T = target_obj_frame.inverse() * target_l_frame;
 //---------------------------------------------------------------------------------------//
-#endif
     ROS_INFO("TASK SET 5: moving to lift poses.");
     {
       reactions.clear();
@@ -378,7 +371,7 @@ void ExpBalancing::expMainLoop() {
       closeCurrentBag();
       ROS_INFO("Finished moving to lift poses.");
     }
-
+#if 1
     //---------------------------------------------------------------------------------------//
     ROS_INFO("TASK SET 6: Starting balancing grasping task.");
     {
@@ -469,7 +462,7 @@ void ExpBalancing::expMainLoop() {
       closeCurrentBag();
       ROS_INFO("Finished balancing grasping task.");
     }
-
+#endif
     //---------------------------------------------------------------------------------------//
     // quitting
     {
@@ -477,7 +470,6 @@ void ExpBalancing::expMainLoop() {
       // close-up log files
       quit_demo = true;
     }
-#if 1
     // wait for quitting
     {
       // boost::mutex::scoped_lock lock(bools_mutex);
@@ -488,8 +480,14 @@ void ExpBalancing::expMainLoop() {
       // remove previous tasks
       //  hiqp_client_->removeTasks(grasp_task_names);
     }
-#endif
+
     ROS_INFO("Finished Experiment.");
+    ROS_INFO("Relax grippers.");
+    std_msgs::Float64 cmd;
+    cmd.data = 0.0;
+    gripper_r_pub_.publish(cmd);
+    gripper_l_pub_.publish(cmd);
+            //---------------------------------------------------------------------------------------//
   }
 }
 bool ExpBalancing::setTasks(std::vector<hiqp_msgs::Task> &next_tasks,
@@ -560,7 +558,7 @@ bool ExpBalancing::start_demo_callback(std_srvs::Empty::Request &req,
                                        std_srvs::Empty::Response &res) {
   initializeDemo();
   std_msgs::Float64 cmd;
-  cmd.data = -10.0;
+  cmd.data = 10.0;
   ROS_INFO("Opening grippers.");
   gripper_r_pub_.publish(cmd);
   gripper_l_pub_.publish(cmd);

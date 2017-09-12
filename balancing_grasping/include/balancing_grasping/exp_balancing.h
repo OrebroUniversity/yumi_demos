@@ -60,7 +60,7 @@ class ExpBalancing {
   std::string js_topic, gripper_r_topic, gripper_l_topic, tf_topic, tf_static_topic, ts_r_topic, ts_l_topic;
   std::string log_dir;
 
-  double grasp_thresh, grasp_rand, theta_rand, alpha, joint_task_tol, pre_grasp_task_tol, grasp_task_tol, cont_lift, grasp_lift;
+  double grasp_thresh, grasp_rand, theta_rand, alpha, contact_task_tol, joint_task_tol, pre_grasp_task_tol, grasp_task_tol, cont_lift, grasp_lift;
   int num_pickups;
 
   bool  quit_demo, tf_published;
@@ -123,7 +123,9 @@ class ExpBalancing {
 
   double randomNumber(double min, double max)
   {
-    return ((double(rand()) / double(RAND_MAX)) * (max - min)) + min;
+    //    double r= ((double(rand()) / double(RAND_MAX)) * (max - min)) + min;
+    //    ROS_WARN("Random number between %f and %f is %f: ",min,max,r);
+    return  ((double(rand()) / double(RAND_MAX)) * (max - min)) + min;
   };
   
   /// creates a folder for bags
